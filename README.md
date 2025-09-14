@@ -6,8 +6,10 @@ A modular ESP32 development environment with support for multiple main modules, 
 
 - **ESP-IDF v5.4** (as git submodule - ensures version consistency)
 - **Build system** - CMake with multi-module support
-- **Code quality** - clang-format, clangd configuration
+- **Code quality** - clang-format, clang-tidy, clangd configuration with lint.sh
 - **Zed integration** - Tasks, settings, and LSP setup
+- **WiFi helper** - Secure credential management with wifi_helper component
+- **Dynamic module selection** - Automatic discovery of main modules
 - **Self-contained** - No global ESP-IDF installation required
 
 ## Project Structure
@@ -20,9 +22,11 @@ esp32/
 ├── main/                 # Main modules directory
 │   ├── main_blink.c      # LED blink example
 │   ├── main_wifi.c       # WiFi connection example
-│   └── main_sensor.c     # Sensor reading example
+│   ├── main_sensor.c     # Sensor reading example
+│   └── wifi_config.h     # WiFi credentials (git-ignored)
 ├── components/           # Shared components
-│   └── helpers/          # Helper functions library
+│   ├── helpers/          # Helper functions library
+│   └── wifi_helper/      # WiFi connection component
 ├── CMakeLists.txt        # Root CMake configuration
 ├── .clang-format         # C/C++ formatting rules
 ├── .clangd               # LSP configuration
@@ -75,9 +79,12 @@ get_idf
 
 ```bash
 ./select_main.sh
+# The script automatically discovers available modules
 # Follow the prompts to select a module
 # The selection is saved and persists across sessions
 ```
+
+The script automatically discovers all `main_*.c` files and extracts descriptions from the code. No need to update the script when adding new modules!
 
 ### Method 2: Manual Module Selection
 
@@ -176,8 +183,14 @@ cat .main_module
 
 1. Create a new file `main/main_yourmodule.c`
 2. Include the app_main() function
-3. Select your module: `./select_main.sh` or `echo "yourmodule" > .main_module`
-4. Build: `idf.py build`
+3. Add a descriptive ESP_LOGI line (optional, for better descriptions):
+   ```c
+   ESP_LOGI(TAG, "Your module description starting...");
+   ```
+4. Select your module: `./select_main.sh` (it will auto-discover your new module)
+5. Build: `idf.py build`
+
+The module selection script automatically discovers new modules - no configuration needed!
 
 ## WiFi Module Configuration
 
@@ -266,3 +279,32 @@ Include in your module:
 ```c
 #include "helpers.h"
 ```
+
+## Code Quality and Linting
+
+The project includes a comprehensive linting system to maintain code quality:
+
+### Running Code Quality Checks
+
+```bash
+./lint.sh
+```
+
+The linting script performs:
+- **Code formatting** with clang-format
+- **Static analysis** with clang-tidy (filtered for ESP32 compatibility)
+- **ESP32-specific checks** (WiFi config validation, header order)
+
+### Integration with Development
+
+- **Zed Editor**: Automatic formatting on save, real-time LSP feedback
+- **Pre-commit**: Run `./lint.sh` before committing changes
+- **CI/CD**: Include `./lint.sh` in your build pipeline
+
+The linting configuration is designed to work seamlessly with ESP-IDF and filters out GCC-specific compiler flags that would cause issues with clang tools.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+The MIT License was chosen for its permissive nature, allowing both educational and commercial use while maintaining simplicity.
