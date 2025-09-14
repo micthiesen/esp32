@@ -115,6 +115,7 @@ Open the Command Palette (Cmd+Shift+P) and search for "task" to see available ta
 - **Flash** - Upload to ESP32
 - **Monitor** - View serial output
 - **Build & Flash** - Compile and upload
+- **Build & Flash (Production)** - Optimized production build and flash
 - **Build, Flash & Monitor** - All in one
 - **Clean** - Remove build artifacts
 
@@ -302,6 +303,22 @@ The linting script performs:
 - **CI/CD**: Include `./lint.sh` in your build pipeline
 
 The linting configuration is designed to work seamlessly with ESP-IDF and filters out GCC-specific compiler flags that would cause issues with clang tools.
+
+## Production Builds
+
+The project supports optimized production builds with a single Zed task:
+
+### Using Production Builds
+
+**Via Zed Task**: Open Command Palette (Cmd+Shift+P) → "Build & Flash (Production)"
+
+**Configuration**:
+- Size optimization (`-Os`)
+- Assertions disabled
+- Error-only logging
+- Each task uses its appropriate configuration (debug/production)
+
+**When to Use**: For final deployment to production devices where code size and performance matter more than debugging capabilities.
 
 ## License
 

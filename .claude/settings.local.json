@@ -26,7 +26,9 @@
       "Bash(/opt/homebrew/opt/llvm/bin/clang-format -i components/wifi_helper/include/wifi_helper.h)",
       "Bash(/opt/homebrew/opt/llvm/bin/clang-tidy -p build main/main_blink.c --config-file=.clangd --format-style=file)",
       "Bash(/opt/homebrew/opt/llvm/bin/clang-tidy --help)",
-      "Bash(./select_main.sh)"
+      "Bash(./select_main.sh)",
+      "WebFetch(domain:docs.espressif.com)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": [],
     "ask": []

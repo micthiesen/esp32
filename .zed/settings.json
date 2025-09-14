@@ -38,14 +38,7 @@
       }
     }
   },
-  "file_scan_exclusions": [
-    "**/.git",
-    "**/build",
-    "**/.espressif",
-    "**/sdkconfig",
-    "**/sdkconfig.old",
-    "**/esp-idf"
-  ],
+  "file_scan_exclusions": ["**/.git"],
   "terminal": {
     "env": {
       "IDF_PATH": "./esp-idf"

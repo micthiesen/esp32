@@ -1,7 +1,7 @@
 [
   {
     "label": "Build",
-    "command": "source ./esp-idf/export.sh && idf.py build",
+    "command": "cp configs/sdkconfig.debug sdkconfig && source ./esp-idf/export.sh && idf.py build",
     "tags": ["esp32-build"],
     "reveal": "always",
     "use_new_terminal": false
@@ -23,15 +23,22 @@
   },
   {
     "label": "Build & Flash",
-    "command": "source ./esp-idf/export.sh && idf.py build flash",
+    "command": "cp configs/sdkconfig.debug sdkconfig && source ./esp-idf/export.sh && idf.py build flash",
     "tags": ["esp32-build"],
     "reveal": "always",
     "use_new_terminal": false
   },
   {
     "label": "Build & Flash & Monitor",
-    "command": "source ./esp-idf/export.sh && idf.py build flash monitor",
+    "command": "cp configs/sdkconfig.debug sdkconfig && source ./esp-idf/export.sh && idf.py build flash monitor",
     "tags": ["esp32-build"],
+    "reveal": "always",
+    "use_new_terminal": false
+  },
+  {
+    "label": "Build & Flash (Production)",
+    "command": "cp configs/sdkconfig.production sdkconfig && source ./esp-idf/export.sh && idf.py build flash",
+    "tags": ["esp32-production"],
     "reveal": "always",
     "use_new_terminal": false
   },
