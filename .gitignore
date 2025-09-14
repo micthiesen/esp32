@@ -1,0 +1,40 @@
+# Build directories
+build/
+cmake-build-*/
+.cache/
+
+# ESP-IDF specific
+sdkconfig
+sdkconfig.old
+.vscode/
+compile_commands.json
+
+# User-specific module selection (not committed to git)
+.main_module
+
+# Configuration files with sensitive data
+main/wifi_config.h
+*.config.h
+
+# ESP-IDF submodule build artifacts
+esp-idf/build/
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Editor temp files
+*.swp
+*.tmp
+*~
+
+# Compiled files
+*.o
+*.a
+*.elf
+*.bin
+*.map
+
+# Dependencies
+managed_components/
+dependencies.lock

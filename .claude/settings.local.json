@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(brew:*)",
+      "Bash(./install.sh esp32,esp32s3,esp32c3)",
+      "Bash(chmod:*)",
+      "WebSearch",
+      "Bash(clang-format:*)",
+      "Bash(source:*)",
+      "Bash(idf.py build:*)",
+      "Bash(/opt/homebrew/opt/llvm/bin/clang-tidy --list-checks)",
+      "Bash(/opt/homebrew/opt/llvm/bin/clang-tidy -p build main/main_blink.c --checks=\"readability-*,bugprone-*,performance-*,-readability-magic-numbers,-readability-isolate-declaration\" --quiet)",
+      "Bash(/opt/homebrew/opt/llvm/bin/clang-format --dry-run --Werror main/main_blink.c main/main_wifi.c main/main_sensor.c components/helpers/src/helpers.c components/helpers/include/helpers.h)",
+      "Bash(git submodule add:*)",
+      "Bash(git checkout:*)",
+      "Bash(git submodule:*)",
+      "Bash(./esp-idf/install.sh:*)",
+      "Bash(idf.py:*)",
+      "Bash(timeout:*)",
+      "Bash(gtimeout:*)",
+      "WebFetch(domain:zed.dev)",
+      "Bash(/opt/homebrew/opt/llvm/bin/clang-format --dry-run --Werror main/main_blink.c main/main_wifi.c components/wifi_helper/src/wifi_helper.c components/helpers/src/helpers.c)",
+      "Bash(/opt/homebrew/opt/llvm/bin/clang-format -i main/main_wifi.c components/wifi_helper/src/wifi_helper.c components/helpers/src/helpers.c)",
+      "Bash(/opt/homebrew/opt/llvm/bin/clang-tidy -p build main/main_blink.c --checks=\"readability-*,bugprone-*,performance-*,-readability-magic-numbers,-readability-isolate-declaration,-readability-function-cognitive-complexity,-readability-identifier-length,-readability-else-after-return,-readability-math-missing-parentheses\" --quiet)",
+      "Bash(./lint.sh)",
+      "Bash(/opt/homebrew/opt/llvm/bin/clang-format -i components/wifi_helper/include/wifi_helper.h)",
+      "Bash(/opt/homebrew/opt/llvm/bin/clang-tidy -p build main/main_blink.c --config-file=.clangd --format-style=file)",
+      "Bash(/opt/homebrew/opt/llvm/bin/clang-tidy --help)",
+      "Bash(./select_main.sh)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
