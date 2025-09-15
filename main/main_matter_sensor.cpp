@@ -14,6 +14,7 @@
 #include <freertos/FreeRTOS.h> // IWYU pragma: keep
 #include <freertos/task.h>
 #include <nvs_flash.h>
+#include <protocols/secure_channel/RendezvousParameters.h>
 #include <setup_payload/QRCodeSetupPayloadGenerator.h>
 #include <setup_payload/SetupPayload.h>
 #include <stdbool.h>
