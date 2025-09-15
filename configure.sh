@@ -6,27 +6,7 @@ repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$repo_root"
 
 # Locate esp-idf (env first, then common submodule paths)
-IDF_PATH="${IDF_PATH:-}"
-if [[ -z "$IDF_PATH" ]]; then
-  for cand in "~/Code/esp-idf" "esp-idf" "third_party/esp-idf" ".deps/esp-idf"; do
-    # Expand tilde for home directory
-    expanded_cand="${cand/#\~/$HOME}"
-
-    if [[ "$expanded_cand" == /* ]]; then
-      # Absolute path
-      if [[ -f "$expanded_cand/tools/idf.py" ]]; then
-        IDF_PATH="$expanded_cand"
-        break
-      fi
-    else
-      # Relative path from repo root
-      if [[ -f "$repo_root/$expanded_cand/tools/idf.py" ]]; then
-        IDF_PATH="$repo_root/$expanded_cand"
-        break
-      fi
-    fi
-  done
-fi
+IDF_PATH="${HOME}/Code/esp-idf"
 if [[ -z "$IDF_PATH" || ! -f "$IDF_PATH/tools/idf.py" ]]; then
   echo "Could not locate esp-idf (set IDF_PATH or install at ~/Code/esp-idf/)" >&2
   exit 1

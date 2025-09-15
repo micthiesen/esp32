@@ -1,14 +1,14 @@
 [
   {
     "label": "Build",
-    "command": "source ./esp-idf/export.sh && idf.py build",
+    "command": "source ../esp-idf/export.sh && idf.py build",
     "tags": ["esp32-build"],
     "reveal": "always",
     "use_new_terminal": false
   },
   {
     "label": "Flash",
-    "command": "source ./esp-idf/export.sh && idf.py flash",
+    "command": "source ../esp-idf/export.sh && idf.py flash",
     "tags": ["esp32-build"],
     "reveal": "always",
     "use_new_terminal": false,
@@ -16,28 +16,28 @@
   },
   {
     "label": "Monitor",
-    "command": "source ./esp-idf/export.sh && idf.py monitor",
+    "command": "source ../esp-idf/export.sh && idf.py monitor",
     "tags": ["esp32-dev"],
     "reveal": "always",
     "use_new_terminal": true
   },
   {
     "label": "Build & Flash",
-    "command": "source ./esp-idf/export.sh && idf.py build flash",
+    "command": "source ../esp-idf/export.sh && idf.py build flash",
     "tags": ["esp32-build"],
     "reveal": "always",
     "use_new_terminal": false
   },
   {
     "label": "Build & Flash & Monitor",
-    "command": "source ./esp-idf/export.sh && idf.py build flash monitor",
+    "command": "source ../esp-idf/export.sh && idf.py build flash monitor",
     "tags": ["esp32-build"],
     "reveal": "always",
     "use_new_terminal": false
   },
   {
     "label": "Clean",
-    "command": "source ./esp-idf/export.sh && (idf.py fullclean || echo 'Nothing to clean')",
+    "command": "source ../esp-idf/export.sh && (idf.py fullclean || echo 'Nothing to clean')",
     "tags": ["esp32-build"],
     "reveal": "always",
     "use_new_terminal": false,
@@ -53,14 +53,14 @@
   },
   {
     "label": "Show Current Target",
-    "command": "source ./esp-idf/export.sh && idf.py --version && grep 'CONFIG_IDF_TARGET=' sdkconfig | cut -d'=' -f2 | tr -d '\"' | sed 's/^/Current target: /'",
+    "command": "source ../esp-idf/export.sh && idf.py --version && grep 'CONFIG_IDF_TARGET=' sdkconfig | cut -d'=' -f2 | tr -d '\"' | sed 's/^/Current target: /'",
     "tags": ["esp32-target"],
     "reveal": "always",
     "use_new_terminal": false
   },
   {
     "label": "Size Analysis",
-    "command": "source ./esp-idf/export.sh && idf.py size",
+    "command": "source ../esp-idf/export.sh && idf.py size",
     "tags": ["esp32-analysis"],
     "reveal": "always",
     "use_new_terminal": false,
@@ -70,14 +70,14 @@
   },
   {
     "label": "Component Size Analysis",
-    "command": "source ./esp-idf/export.sh && idf.py size-components",
+    "command": "source ../esp-idf/export.sh && idf.py size-components",
     "tags": ["esp32-analysis"],
     "reveal": "always",
     "use_new_terminal": false
   },
   {
     "label": "Erase Flash",
-    "command": "source ./esp-idf/export.sh && idf.py erase-flash",
+    "command": "source ../esp-idf/export.sh && idf.py erase-flash",
     "tags": ["esp32-analysis"],
     "reveal": "always",
     "use_new_terminal": false,

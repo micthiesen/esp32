@@ -38,10 +38,5 @@
       }
     }
   },
-  "file_scan_exclusions": ["**/.git"],
-  "terminal": {
-    "env": {
-      "IDF_PATH": "./esp-idf"
-    }
-  }
+  "file_scan_exclusions": ["**/.git"]
 }
