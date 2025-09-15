@@ -44,6 +44,11 @@ set(MAIN_SOURCE "${MAIN_SOURCE}" CACHE STRING "Resolved source for selected modu
 # ESP-IDF Component Manager will automatically handle esp-matter dependencies
 # No manual configuration needed when esp_matter is added as a managed dependency
 
+# Use 2MB partition table by default (works for all modules, required for Matter)
+set(SDKCONFIG_DEFAULTS
+    "sdkconfig.defaults"
+    CACHE STRING "Semicolon-separated list of default config files" FORCE)
+
 # ESP-IDF integration
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 

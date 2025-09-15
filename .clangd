@@ -26,6 +26,8 @@ CompileFlags:
 Index:
   Background: Build
 Diagnostics:
+  Suppress:
+    - pp_file_not_found
   ClangTidy:
     Add:
       - readability-*

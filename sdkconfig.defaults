@@ -1,0 +1,15 @@
+# Default configuration for ESP32 multi-module project
+# This uses 2MB app partitions which work for all modules and are required for Matter
+
+# Use custom partition table with 2MB OTA partitions
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+
+# Configure for 4MB flash (standard for ESP32-C3)
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+
+# Enable HKDF for modern crypto applications (required by Matter)
+CONFIG_MBEDTLS_HKDF_C=y
+
+# Increase main task stack size for complex applications
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192
