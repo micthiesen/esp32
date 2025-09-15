@@ -1,9 +1,18 @@
 #!/bin/bash
 
 # Script to select which main module to build
+# Usage: ./select_main.sh [production]
 
-echo "ESP32 Main Module Selector"
-echo "=========================="
+# Check if production mode requested
+PRODUCTION_MODE=""
+if [ "$1" = "production" ]; then
+    PRODUCTION_MODE="production"
+    echo "ESP32 Main Module Selector (Production Mode)"
+    echo "============================================="
+else
+    echo "ESP32 Main Module Selector"
+    echo "=========================="
+fi
 echo ""
 
 # Show current selection if it exists
@@ -55,6 +64,7 @@ for i in "${!MODULES[@]}"; do
                 blink) description="LED blinking example" ;;
                 wifi) description="WiFi connection example" ;;
                 sensor) description="Sensor reading example" ;;
+                matter) description="Matter WiFi temperature sensor" ;;
                 *) description="ESP32 application" ;;
             esac
         fi
@@ -88,12 +98,6 @@ if [ ! -f "main/main_${MODULE}.c" ]; then
     exit 1
 fi
 
-# Check if we're switching to a different module
-MODULE_CHANGED=false
-if [ "$PREVIOUS_MODULE" != "" ] && [ "$PREVIOUS_MODULE" != "$MODULE" ]; then
-    MODULE_CHANGED=true
-fi
-
 # Write the selection to the .main_module file
 echo "$MODULE" > .main_module
 
@@ -101,19 +105,57 @@ echo ""
 echo "✓ Selected module: $MODULE (main_${MODULE}.c)"
 echo "✓ Module selection saved to .main_module"
 
-# Auto-clean if module changed
-if [ "$MODULE_CHANGED" = true ]; then
-    echo ""
-    echo "🧹 Module changed from '$PREVIOUS_MODULE' to '$MODULE'"
-    echo "🧹 Cleaning build directory to ensure fresh build..."
-
-    if [ -d "build" ]; then
-        rm -rf build
-        echo "✓ Build directory cleaned"
+# Handle configuration selection based on module and mode
+echo ""
+if [ "$PRODUCTION_MODE" = "production" ]; then
+    echo "🔧 Configuring production build for $MODULE module..."
+    # Production mode - use production config
+    if [ -f "configs/sdkconfig.production" ]; then
+        cp configs/sdkconfig.production sdkconfig
+        echo "✓ Applied production configuration (sdkconfig)"
     else
-        echo "ℹ Build directory was already clean"
+        echo "⚠ Warning: configs/sdkconfig.production not found, using debug config"
+        exit 1;
+    fi
+else
+    echo "🔧 Configuring build for $MODULE module..."
+
+    if [ "$MODULE" = "matter" ]; then
+        # Matter module needs special configuration
+        if [ -f "configs/sdkconfig.matter" ]; then
+            cp configs/sdkconfig.matter sdkconfig
+            echo "✓ Applied Matter-specific configuration (sdkconfig)"
+        else
+            echo "⚠ Warning: configs/sdkconfig.matter not found, using default config"
+            exit 1;
+        fi
+
+        echo "ℹ Matter module requires:"
+        echo "  - WiFi credentials in main/wifi_config.h"
+        echo "  - ESP-Matter SDK (if not installed, run: cd esp-matter && ./install.sh)"
+        echo "  - 4MB flash size minimum"
+    else
+        # For non-Matter modules, use debug configuration
+        if [ -f "configs/sdkconfig.debug" ]; then
+            cp configs/sdkconfig.debug sdkconfig
+            echo "✓ Applied debug configuration (sdkconfig)"
+        else
+            echo "⚠ Warning: configs/sdkconfig.debug not found"
+            exit 1;
+        fi
     fi
 fi
+
+  echo ""
+  echo "🧹 Module changed from '$PREVIOUS_MODULE' to '$MODULE'"
+  echo "🧹 Cleaning build directory to ensure fresh build..."
+
+  if [ -d "build" ]; then
+      rm -rf build
+      echo "✓ Build directory cleaned"
+  else
+      echo "ℹ Build directory was already clean"
+  fi
 
 echo ""
 echo "You can now build with:"
@@ -121,3 +163,5 @@ echo "  source ./esp-idf/export.sh"
 echo "  idf.py build"
 echo ""
 echo "Or use Zed tasks: Cmd+Shift+P → 'task' → 'Build'"
+echo ""
+echo "ℹ For production builds, use: './select_main.sh production' or the 'Build & Flash (Production)' task"

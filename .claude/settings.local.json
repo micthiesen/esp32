@@ -28,7 +28,14 @@
       "Bash(/opt/homebrew/opt/llvm/bin/clang-tidy --help)",
       "Bash(./select_main.sh)",
       "WebFetch(domain:docs.espressif.com)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(./install.sh)",
+      "Bash(/opt/homebrew/opt/llvm/bin/clang-format --dry-run --Werror main/main_matter.c components/matter_sensor/src/matter_sensor.c components/matter_sensor/include/matter_sensor.h)",
+      "Bash(/opt/homebrew/opt/llvm/bin/clang-format -i main/main_matter.c components/matter_sensor/src/matter_sensor.c components/matter_sensor/include/matter_sensor.h components/matter_sensor/src/matter_sensor_cpp.cpp)",
+      "Bash(export:*)",
+      "Bash(/opt/homebrew/opt/llvm/bin/clang-format -i main/main_matter.c components/matter_sensor/src/matter_sensor.c components/matter_sensor/include/matter_sensor.h)",
+      "Bash(./select_main.sh:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

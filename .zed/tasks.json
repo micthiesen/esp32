@@ -1,10 +1,13 @@
 [
   {
     "label": "Build",
-    "command": "cp configs/sdkconfig.debug sdkconfig && source ./esp-idf/export.sh && idf.py build",
+    "command": "source ./esp-idf/export.sh && idf.py build",
     "tags": ["esp32-build"],
     "reveal": "always",
-    "use_new_terminal": false
+    "use_new_terminal": false,
+    "env": {
+      "ESP_MATTER_PATH": "${ZED_WORKTREE_ROOT}/esp-matter"
+    }
   },
   {
     "label": "Flash",
@@ -12,35 +15,50 @@
     "tags": ["esp32-build"],
     "reveal": "always",
     "use_new_terminal": false,
-    "hide": "on_success"
+    "hide": "on_success",
+    "env": {
+      "ESP_MATTER_PATH": "${ZED_WORKTREE_ROOT}/esp-matter"
+    }
   },
   {
     "label": "Monitor",
     "command": "source ./esp-idf/export.sh && idf.py monitor",
     "tags": ["esp32-dev"],
     "reveal": "always",
-    "use_new_terminal": true
+    "use_new_terminal": true,
+    "env": {
+      "ESP_MATTER_PATH": "${ZED_WORKTREE_ROOT}/esp-matter"
+    }
   },
   {
     "label": "Build & Flash",
-    "command": "cp configs/sdkconfig.debug sdkconfig && source ./esp-idf/export.sh && idf.py build flash",
+    "command": "source ./esp-idf/export.sh && idf.py build flash",
     "tags": ["esp32-build"],
     "reveal": "always",
-    "use_new_terminal": false
+    "use_new_terminal": false,
+    "env": {
+      "ESP_MATTER_PATH": "${ZED_WORKTREE_ROOT}/esp-matter"
+    }
   },
   {
     "label": "Build & Flash & Monitor",
-    "command": "cp configs/sdkconfig.debug sdkconfig && source ./esp-idf/export.sh && idf.py build flash monitor",
+    "command": "source ./esp-idf/export.sh && idf.py build flash monitor",
     "tags": ["esp32-build"],
     "reveal": "always",
-    "use_new_terminal": false
+    "use_new_terminal": false,
+    "env": {
+      "ESP_MATTER_PATH": "${ZED_WORKTREE_ROOT}/esp-matter"
+    }
   },
   {
     "label": "Build & Flash (Production)",
-    "command": "cp configs/sdkconfig.production sdkconfig && source ./esp-idf/export.sh && idf.py build flash",
+    "command": "./select_main.sh production && source ./esp-idf/export.sh && idf.py build flash",
     "tags": ["esp32-production"],
     "reveal": "always",
-    "use_new_terminal": false
+    "use_new_terminal": false,
+    "env": {
+      "ESP_MATTER_PATH": "${ZED_WORKTREE_ROOT}/esp-matter"
+    }
   },
   {
     "label": "Clean",
@@ -48,14 +66,20 @@
     "tags": ["esp32-build"],
     "reveal": "always",
     "use_new_terminal": false,
-    "hide": "on_success"
+    "hide": "on_success",
+    "env": {
+      "ESP_MATTER_PATH": "${ZED_WORKTREE_ROOT}/esp-matter"
+    }
   },
   {
     "label": "Menuconfig",
     "command": "source ./esp-idf/export.sh && idf.py menuconfig",
     "tags": ["esp32-dev"],
     "reveal": "always",
-    "use_new_terminal": true
+    "use_new_terminal": true,
+    "env": {
+      "ESP_MATTER_PATH": "${ZED_WORKTREE_ROOT}/esp-matter"
+    }
   },
   {
     "label": "Select Main Module",
@@ -63,14 +87,20 @@
     "tags": ["esp32-dev"],
     "reveal": "always",
     "use_new_terminal": false,
-    "hide": "on_success"
+    "hide": "on_success",
+    "env": {
+      "ESP_MATTER_PATH": "${ZED_WORKTREE_ROOT}/esp-matter"
+    }
   },
   {
     "label": "Show Current Module",
     "command": "if [ -f .main_module ]; then echo \"Current module: $(cat .main_module)\"; else echo \"No module selected (default: blink)\"; fi",
     "tags": ["esp32-dev"],
     "reveal": "always",
-    "use_new_terminal": false
+    "use_new_terminal": false,
+    "env": {
+      "ESP_MATTER_PATH": "${ZED_WORKTREE_ROOT}/esp-matter"
+    }
   },
   {
     "label": "Set Target: ESP32-C3",
@@ -78,7 +108,10 @@
     "tags": ["esp32-target"],
     "reveal": "always",
     "use_new_terminal": false,
-    "hide": "on_success"
+    "hide": "on_success",
+    "env": {
+      "ESP_MATTER_PATH": "${ZED_WORKTREE_ROOT}/esp-matter"
+    }
   },
   {
     "label": "Set Target: ESP32-H2",
@@ -86,28 +119,40 @@
     "tags": ["esp32-target"],
     "reveal": "always",
     "use_new_terminal": false,
-    "hide": "on_success"
+    "hide": "on_success",
+    "env": {
+      "ESP_MATTER_PATH": "${ZED_WORKTREE_ROOT}/esp-matter"
+    }
   },
   {
     "label": "Show Current Target",
     "command": "source ./esp-idf/export.sh && idf.py --version && grep 'CONFIG_IDF_TARGET=' sdkconfig | cut -d'=' -f2 | tr -d '\"' | sed 's/^/Current target: /'",
     "tags": ["esp32-target"],
     "reveal": "always",
-    "use_new_terminal": false
+    "use_new_terminal": false,
+    "env": {
+      "ESP_MATTER_PATH": "${ZED_WORKTREE_ROOT}/esp-matter"
+    }
   },
   {
     "label": "Size Analysis",
     "command": "source ./esp-idf/export.sh && idf.py size",
     "tags": ["esp32-analysis"],
     "reveal": "always",
-    "use_new_terminal": false
+    "use_new_terminal": false,
+    "env": {
+      "ESP_MATTER_PATH": "${ZED_WORKTREE_ROOT}/esp-matter"
+    }
   },
   {
     "label": "Component Size Analysis",
     "command": "source ./esp-idf/export.sh && idf.py size-components",
     "tags": ["esp32-analysis"],
     "reveal": "always",
-    "use_new_terminal": false
+    "use_new_terminal": false,
+    "env": {
+      "ESP_MATTER_PATH": "${ZED_WORKTREE_ROOT}/esp-matter"
+    }
   },
   {
     "label": "Erase Flash",
@@ -115,6 +160,9 @@
     "tags": ["esp32-analysis"],
     "reveal": "always",
     "use_new_terminal": false,
-    "hide": "on_success"
+    "hide": "on_success",
+    "env": {
+      "ESP_MATTER_PATH": "${ZED_WORKTREE_ROOT}/esp-matter"
+    }
   }
 ]

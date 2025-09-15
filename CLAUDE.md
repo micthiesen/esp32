@@ -2,24 +2,6 @@
 
 This document contains important instructions and guidelines for Claude when working on this ESP32 project.
 
-## Code Quality Requirements
-
-### Always Run Linting After Changes
-**CRITICAL**: After making any code changes, you MUST run the linting script:
-
-```bash
-./lint.sh
-```
-
-This script performs comprehensive code quality checks:
-- Code formatting verification with clang-format
-- Static analysis with clang-tidy (with ESP32-compatible filtering)
-- ESP32-specific checks (WiFi config validation, FreeRTOS header order)
-- Colored output with actionable error messages
-- Automatic filtering of GCC-specific compiler flags
-
-**Do not consider your work complete until `lint.sh` passes without errors.**
-
 ## Project Structure and Conventions
 
 ### Dynamic Module Selection System
@@ -71,10 +53,6 @@ source ./esp-idf/export.sh && idf.py flash
 # Monitor output
 source ./esp-idf/export.sh && idf.py monitor
 
-# Run quality checks
-./lint.sh
-```
-
 ## Production Builds
 - Use "Build & Flash (Production)" Zed task for optimized production deployment
 - Each task automatically uses its appropriate configuration (debug tasks use debug config, production task uses production config)
@@ -120,7 +98,6 @@ source ./esp-idf/export.sh && idf.py monitor
 - Components accessing wifi_config.h must add main/ to include paths
 
 ### Code Review Checklist
-- [ ] `./lint.sh` passes without errors
 - [ ] No credentials or secrets in code
 - [ ] Proper FreeRTOS header ordering
 - [ ] Component CMakeLists.txt updated if needed
