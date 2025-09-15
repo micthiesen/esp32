@@ -28,10 +28,16 @@ fi
 echo "Target: $current_target"
 
 current_module="Unknown"
-if [[ -f "build/project_description.json" ]]; then
-  current_module=$(python -c "import json; print(json.load(open('build/project_description.json')).get('project_variables', {}).get('MAIN_MODULE', 'Unknown'))" 2>/dev/null || echo "Unknown")
+
+if [[ -f build/project_description.json ]]; then
+  current_module=$(
+    grep -Eo '"sources":[^]]*' build/project_description.json \
+    | grep -Eo 'main_[^"]*\.(c|cpp)' \
+    | sed -E 's@(.*/)?main_([^/.]+)\.(c|cpp)@\2@' \
+    | head -n1
+  )
 fi
-echo "Module: $current_module"
+echo "Module: ${current_module:-Unknown}"
 echo
 
 # Discover modules

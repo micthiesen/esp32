@@ -43,7 +43,8 @@
       "Read(//Users/michael/Code/**)",
       "Bash(echo:*)",
       "Bash(unset IDF_PATH)",
-      "Bash(git lfs clone:*)"
+      "Bash(git lfs clone:*)",
+      "Bash(git lfs install:*)"
     ],
     "deny": [],
     "ask": []
