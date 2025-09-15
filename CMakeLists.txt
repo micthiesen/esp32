@@ -41,16 +41,8 @@ else()
 endif()
 set(MAIN_SOURCE "${MAIN_SOURCE}" CACHE STRING "Resolved source for selected module" FORCE)
 
-# If module name contains "matter", enable esp-matter components
-string(FIND "${MAIN_MODULE}" "matter" _mm_pos)
-if(NOT _mm_pos EQUAL -1)
-  set(ESP_MATTER_PATH "~/Code/esp-matter" CACHE PATH "Path to ESP-Matter")
-  # Expand ~ to actual home directory
-  string(REPLACE "~" "$ENV{HOME}" ESP_MATTER_PATH_EXPANDED ${ESP_MATTER_PATH})
-  set(ESP_MATTER_PATH "${ESP_MATTER_PATH_EXPANDED}" CACHE PATH "Path to ESP-Matter" FORCE)
-  list(APPEND EXTRA_COMPONENT_DIRS "${ESP_MATTER_PATH}/components")
-  list(APPEND EXTRA_COMPONENT_DIRS "${ESP_MATTER_PATH}/connectedhomeip/connectedhomeip/config/esp32/components")
-endif()
+# ESP-IDF Component Manager will automatically handle esp-matter dependencies
+# No manual configuration needed when esp_matter is added as a managed dependency
 
 # ESP-IDF integration
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)

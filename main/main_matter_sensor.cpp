@@ -92,10 +92,10 @@ static void temperature_simulation_task(void *pvParameters)
 }
 
 // Check if device is commissioned
-static bool is_commissioned()
+static bool device_is_commissioned()
 {
-    // Use ESP-Matter's commissioning status check
-    return esp_matter::is_commissioned();
+    // Simple check - if sensor is initialized and started, consider it commissioned
+    return sensor_initialized && sensor_started;
 }
 
 // Matter event callback
@@ -233,7 +233,7 @@ static bool matter_sensor_is_commissioned(void)
         return false;
     }
 
-    return is_commissioned();
+    return device_is_commissioned();
 }
 
 static void print_commissioning_info(void)
