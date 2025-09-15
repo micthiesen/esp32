@@ -51,18 +51,8 @@
     }
   },
   {
-    "label": "Build & Flash (Production)",
-    "command": "./select_main.sh production && source ./esp-idf/export.sh && idf.py build flash",
-    "tags": ["esp32-production"],
-    "reveal": "always",
-    "use_new_terminal": false,
-    "env": {
-      "ESP_MATTER_PATH": "${ZED_WORKTREE_ROOT}/esp-matter"
-    }
-  },
-  {
     "label": "Clean",
-    "command": "source ./esp-idf/export.sh && idf.py fullclean",
+    "command": "source ./esp-idf/export.sh && (idf.py fullclean || echo 'Nothing to clean')",
     "tags": ["esp32-build"],
     "reveal": "always",
     "use_new_terminal": false,
@@ -72,51 +62,9 @@
     }
   },
   {
-    "label": "Menuconfig",
-    "command": "source ./esp-idf/export.sh && idf.py menuconfig",
+    "label": "Configure",
+    "command": "./configure.sh",
     "tags": ["esp32-dev"],
-    "reveal": "always",
-    "use_new_terminal": true,
-    "env": {
-      "ESP_MATTER_PATH": "${ZED_WORKTREE_ROOT}/esp-matter"
-    }
-  },
-  {
-    "label": "Select Main Module",
-    "command": "./select_main.sh",
-    "tags": ["esp32-dev"],
-    "reveal": "always",
-    "use_new_terminal": false,
-    "hide": "on_success",
-    "env": {
-      "ESP_MATTER_PATH": "${ZED_WORKTREE_ROOT}/esp-matter"
-    }
-  },
-  {
-    "label": "Show Current Module",
-    "command": "if [ -f .main_module ]; then echo \"Current module: $(cat .main_module)\"; else echo \"No module selected (default: blink)\"; fi",
-    "tags": ["esp32-dev"],
-    "reveal": "always",
-    "use_new_terminal": false,
-    "env": {
-      "ESP_MATTER_PATH": "${ZED_WORKTREE_ROOT}/esp-matter"
-    }
-  },
-  {
-    "label": "Set Target: ESP32-C3",
-    "command": "source ./esp-idf/export.sh && idf.py set-target esp32c3",
-    "tags": ["esp32-target"],
-    "reveal": "always",
-    "use_new_terminal": false,
-    "hide": "on_success",
-    "env": {
-      "ESP_MATTER_PATH": "${ZED_WORKTREE_ROOT}/esp-matter"
-    }
-  },
-  {
-    "label": "Set Target: ESP32-H2",
-    "command": "source ./esp-idf/export.sh && idf.py set-target esp32h2",
-    "tags": ["esp32-target"],
     "reveal": "always",
     "use_new_terminal": false,
     "hide": "on_success",

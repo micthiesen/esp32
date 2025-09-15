@@ -1,52 +1,54 @@
 cmake_minimum_required(VERSION 3.16)
 
-# --- Configurable project name
-set(PROJECT_NAME "esp32_multi" CACHE STRING "Project name")
+# Resolve IDF_PATH to submodule if not exported by user shell
+if(NOT DEFINED ENV{IDF_PATH})
+  set(ENV{IDF_PATH} "${CMAKE_SOURCE_DIR}/esp-idf")
+endif()
 
-# --- Reconfigure when .main_module changes (explicit + portable)
-# Avoid relying on configure_file for this; use CMAKE_CONFIGURE_DEPENDS.
-set(_MAIN_MODULE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/.main_module")
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_MAIN_MODULE_FILE}")
+# --- Discover available mains
+file(GLOB _MAIN_C_SOURCES   CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/main/main_*.c")
+file(GLOB _MAIN_CPP_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/main/main_*.cpp")
 
-if(EXISTS "${_MAIN_MODULE_FILE}")
-    file(READ "${_MAIN_MODULE_FILE}" MAIN_MODULE)
-    string(STRIP "${MAIN_MODULE}" MAIN_MODULE)
+set(_MODULE_NAMES "")
+foreach(_f IN LISTS _MAIN_C_SOURCES _MAIN_CPP_SOURCES)
+  string(REGEX REPLACE ".*/main_([^/]+)\\.(c|cpp)$" "\\1" _mod "${_f}")
+  list(FIND _MODULE_NAMES "${_mod}" _idx)
+  if(_idx EQUAL -1)
+    list(APPEND _MODULE_NAMES "${_mod}")
+  endif()
+endforeach()
 
-    # Strictly validate to avoid weird filenames / injection
-    if(NOT MAIN_MODULE MATCHES "^[A-Za-z0-9_]+$")
-        message(FATAL_ERROR ".main_module contains invalid chars: '${MAIN_MODULE}'")
-    endif()
+if(NOT _MODULE_NAMES)
+  message(FATAL_ERROR "No main/main_*.c(pp) found")
+endif()
 
-    set(MAIN_SOURCE "main_${MAIN_MODULE}.c")
-    message(STATUS "Using main module: ${MAIN_SOURCE}")
+# User-selectable module: set value and offer choices in cache
+set(MAIN_MODULE "${_MODULE_NAMES}" CACHE STRING "Select main_ module (basename without extension)")
+set_property(CACHE MAIN_MODULE PROPERTY STRINGS ${_MODULE_NAMES})
+
+# Resolve selected source (prefer .cpp over .c if both exist)
+set(_cand_cpp "${CMAKE_CURRENT_SOURCE_DIR}/main/main_${MAIN_MODULE}.cpp")
+set(_cand_c   "${CMAKE_CURRENT_SOURCE_DIR}/main/main_${MAIN_MODULE}.c")
+if(EXISTS "${_cand_cpp}")
+  set(MAIN_SOURCE "main_${MAIN_MODULE}.cpp")
+elseif(EXISTS "${_cand_c}")
+  set(MAIN_SOURCE "main_${MAIN_MODULE}.c")
 else()
-    message(FATAL_ERROR "No .main_module file found at ${_MAIN_MODULE_FILE}")
+  message(FATAL_ERROR "MAIN_MODULE='${MAIN_MODULE}' not found as .c or .cpp under main/")
+endif()
+set(MAIN_SOURCE "${MAIN_SOURCE}" CACHE STRING "Resolved source for selected module" FORCE)
+
+# If module name contains "matter", enable esp-matter components
+string(FIND "${MAIN_MODULE}" "matter" _mm_pos)
+if(NOT _mm_pos EQUAL -1)
+  set(ESP_MATTER_PATH "${CMAKE_CURRENT_SOURCE_DIR}/esp-matter" CACHE PATH "Path to ESP-Matter")
+  set(EXTRA_COMPONENT_DIRS "${ESP_MATTER_PATH}/components")
 endif()
 
-# Verify the chosen main file exists in the 'main' component dir
-if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/main/${MAIN_SOURCE}")
-    message(FATAL_ERROR "Selected source not found: main/${MAIN_SOURCE}")
-endif()
-
-# --- Optional: enable ESP-Matter only when module name contains 'matter'
-# Prefer literal substring search over regex if you mean “contains”.
-string(FIND "${MAIN_MODULE}" "matter" _matter_pos)
-if(NOT _matter_pos EQUAL -1)
-    set(ESP_MATTER_PATH "${CMAKE_CURRENT_SOURCE_DIR}/esp-matter" CACHE PATH "Path to ESP-Matter")
-    set(ENV{ESP_MATTER_PATH} "${ESP_MATTER_PATH}")  # if esp-matter expects ENV
-    # EXTRA_COMPONENT_DIRS must be set BEFORE including project.cmake
-    set(EXTRA_COMPONENT_DIRS "${ESP_MATTER_PATH}/components")
-    message(STATUS "Matter module detected; adding ESP-Matter components from: ${EXTRA_COMPONENT_DIRS}")
-endif()
-
-# --- Pass the selected file to the 'main' component via cache var
-# The main/CMakeLists.txt should use: idf_component_register(SRCS "${MAIN_SOURCE}" ...)
-set(MAIN_SOURCE "${MAIN_SOURCE}" CACHE STRING "Selected main source for 'main' component" FORCE)
-
-# --- ESP-IDF glue (order matters: set vars -> include project.cmake -> project())
+# ESP-IDF integration
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
-# Limit to specific components if desired (optional)
+# Optional: restrict to components
 set(COMPONENTS main)
 
-project(${PROJECT_NAME})
+project(esp32_multi)

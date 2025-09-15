@@ -41,10 +41,10 @@ This document contains important instructions and guidelines for Claude when wor
 
 ### Standard Development Commands
 ```bash
-# Select module (automatically discovers available modules)
-./select_main.sh
+# Configure project (select module and target)
+./configure.sh
 
-# Build current module (debug)
+# Build current module
 source ./esp-idf/export.sh && idf.py build
 
 # Flash to device
@@ -53,11 +53,6 @@ source ./esp-idf/export.sh && idf.py flash
 # Monitor output
 source ./esp-idf/export.sh && idf.py monitor
 
-## Production Builds
-- Use "Build & Flash (Production)" Zed task for optimized production deployment
-- Each task automatically uses its appropriate configuration (debug tasks use debug config, production task uses production config)
-- Production config: size optimization, error-only logging, assertions disabled
-- No manual config management needed - tasks handle everything
 
 ### Zed Editor Integration
 - Tasks are configured in `.zed/tasks.json`

@@ -35,7 +35,9 @@
       "Bash(export:*)",
       "Bash(/opt/homebrew/opt/llvm/bin/clang-format -i main/main_matter.c components/matter_sensor/src/matter_sensor.c components/matter_sensor/include/matter_sensor.h)",
       "Bash(./select_main.sh:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(./scripts/select-main.sh:*)",
+      "Bash(/dev/null)"
     ],
     "deny": [],
     "ask": []
