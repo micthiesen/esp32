@@ -44,7 +44,9 @@
       "Bash(echo:*)",
       "Bash(unset IDF_PATH)",
       "Bash(git lfs clone:*)",
-      "Bash(git lfs install:*)"
+      "Bash(git lfs install:*)",
+      "Bash(git lfs pull:*)",
+      "Bash(git lfs:*)"
     ],
     "deny": [],
     "ask": []

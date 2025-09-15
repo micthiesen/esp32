@@ -49,6 +49,7 @@ if(NOT _mm_pos EQUAL -1)
   string(REPLACE "~" "$ENV{HOME}" ESP_MATTER_PATH_EXPANDED ${ESP_MATTER_PATH})
   set(ESP_MATTER_PATH "${ESP_MATTER_PATH_EXPANDED}" CACHE PATH "Path to ESP-Matter" FORCE)
   list(APPEND EXTRA_COMPONENT_DIRS "${ESP_MATTER_PATH}/components")
+  list(APPEND EXTRA_COMPONENT_DIRS "${ESP_MATTER_PATH}/connectedhomeip/connectedhomeip/config/esp32/components")
 endif()
 
 # ESP-IDF integration
