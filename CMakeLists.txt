@@ -1,8 +1,11 @@
 cmake_minimum_required(VERSION 3.16)
 
-# Resolve IDF_PATH to submodule if not exported by user shell
+# Resolve IDF_PATH to global installation if not exported by user shell
 if(NOT DEFINED ENV{IDF_PATH})
-  set(ENV{IDF_PATH} "${CMAKE_SOURCE_DIR}/esp-idf")
+  set(ENV{IDF_PATH} "~/Code/esp-idf")
+  # Expand ~ to actual home directory
+  string(REPLACE "~" "$ENV{HOME}" IDF_PATH_EXPANDED $ENV{IDF_PATH})
+  set(ENV{IDF_PATH} "${IDF_PATH_EXPANDED}")
 endif()
 
 # --- Discover available mains
@@ -41,7 +44,10 @@ set(MAIN_SOURCE "${MAIN_SOURCE}" CACHE STRING "Resolved source for selected modu
 # If module name contains "matter", enable esp-matter components
 string(FIND "${MAIN_MODULE}" "matter" _mm_pos)
 if(NOT _mm_pos EQUAL -1)
-  set(ESP_MATTER_PATH "${CMAKE_CURRENT_SOURCE_DIR}/esp-matter" CACHE PATH "Path to ESP-Matter")
+  set(ESP_MATTER_PATH "~/Code/esp-matter" CACHE PATH "Path to ESP-Matter")
+  # Expand ~ to actual home directory
+  string(REPLACE "~" "$ENV{HOME}" ESP_MATTER_PATH_EXPANDED ${ESP_MATTER_PATH})
+  set(ESP_MATTER_PATH "${ESP_MATTER_PATH_EXPANDED}" CACHE PATH "Path to ESP-Matter" FORCE)
   list(APPEND EXTRA_COMPONENT_DIRS "${ESP_MATTER_PATH}/components")
 endif()
 

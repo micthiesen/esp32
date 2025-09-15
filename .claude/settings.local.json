@@ -37,7 +37,12 @@
       "Bash(./select_main.sh:*)",
       "Bash(cat:*)",
       "Bash(./scripts/select-main.sh:*)",
-      "Bash(/dev/null)"
+      "Bash(/dev/null)",
+      "Bash(./configure.sh)",
+      "Bash(find:*)",
+      "Read(//Users/michael/Code/**)",
+      "Bash(echo:*)",
+      "Bash(unset IDF_PATH)"
     ],
     "deny": [],
     "ask": []

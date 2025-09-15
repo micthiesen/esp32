@@ -8,15 +8,27 @@ cd "$repo_root"
 # Locate esp-idf (env first, then common submodule paths)
 IDF_PATH="${IDF_PATH:-}"
 if [[ -z "$IDF_PATH" ]]; then
-  for cand in "esp-idf" "third_party/esp-idf" ".deps/esp-idf"; do
-    if [[ -f "$repo_root/$cand/tools/idf.py" ]]; then
-      IDF_PATH="$repo_root/$cand"
-      break
+  for cand in "~/Code/esp-idf" "esp-idf" "third_party/esp-idf" ".deps/esp-idf"; do
+    # Expand tilde for home directory
+    expanded_cand="${cand/#\~/$HOME}"
+
+    if [[ "$expanded_cand" == /* ]]; then
+      # Absolute path
+      if [[ -f "$expanded_cand/tools/idf.py" ]]; then
+        IDF_PATH="$expanded_cand"
+        break
+      fi
+    else
+      # Relative path from repo root
+      if [[ -f "$repo_root/$expanded_cand/tools/idf.py" ]]; then
+        IDF_PATH="$repo_root/$expanded_cand"
+        break
+      fi
     fi
   done
 fi
 if [[ -z "$IDF_PATH" || ! -f "$IDF_PATH/tools/idf.py" ]]; then
-  echo "Could not locate esp-idf (set IDF_PATH or add submodule at esp-idf/)" >&2
+  echo "Could not locate esp-idf (set IDF_PATH or install at ~/Code/esp-idf/)" >&2
   exit 1
 fi
 export IDF_PATH
@@ -95,7 +107,9 @@ echo "  Target: $selected_target"
 
 # Set ESP_MATTER_PATH if module contains "matter"
 if [[ "$selected_module" == *"matter"* ]]; then
-  export ESP_MATTER_PATH="$repo_root/esp-matter"
+  export ESP_MATTER_PATH="~/Code/esp-matter"
+  # Expand tilde for actual path
+  ESP_MATTER_PATH="${ESP_MATTER_PATH/#\~/$HOME}"
   echo "  ESP_MATTER_PATH: $ESP_MATTER_PATH"
 fi
 
