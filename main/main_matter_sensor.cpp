@@ -5,6 +5,7 @@
    and other Matter-compatible ecosystems.
 */
 
+#include <app/server/OnboardingCodesUtil.h>
 #include <esp_check.h>
 #include <esp_err.h>
 #include <esp_log.h>
@@ -13,6 +14,8 @@
 #include <freertos/FreeRTOS.h> // IWYU pragma: keep
 #include <freertos/task.h>
 #include <nvs_flash.h>
+#include <setup_payload/QRCodeSetupPayloadGenerator.h>
+#include <setup_payload/SetupPayload.h>
 #include <stdbool.h>
 #include <wifi_helper.h>
 
@@ -23,6 +26,7 @@ using namespace esp_matter::attribute;
 using namespace esp_matter::endpoint;
 using namespace chip::app::Clusters;
 using namespace chip::DeviceLayer;
+using chip::QRCodeBasicSetupPayloadGenerator;
 
 // Temperature simulation variables
 static bool sensor_initialized = false;
@@ -89,13 +93,6 @@ static void temperature_simulation_task(void *pvParameters)
 
         vTaskDelay(pdMS_TO_TICKS(5000)); // Update every 5 seconds
     }
-}
-
-// Check if device is commissioned
-static bool device_is_commissioned()
-{
-    // Simple check - if sensor is initialized and started, consider it commissioned
-    return sensor_initialized && sensor_started;
 }
 
 // Matter event callback
@@ -227,15 +224,6 @@ static esp_err_t matter_sensor_start(void)
     return ESP_OK;
 }
 
-static bool matter_sensor_is_commissioned(void)
-{
-    if (!sensor_initialized) {
-        return false;
-    }
-
-    return device_is_commissioned();
-}
-
 static void print_commissioning_info(void)
 {
     ESP_LOGI(TAG, "=== Matter Temperature Sensor ===");
@@ -243,12 +231,48 @@ static void print_commissioning_info(void)
     ESP_LOGI(TAG, "Vendor ID: Test Vendor (0xFFF1)");
     ESP_LOGI(TAG, "Product ID: Test Product (0x8000)");
 
-    if (matter_sensor_is_commissioned()) {
-        ESP_LOGI(TAG, "Status: Commissioned and ready");
+    ESP_LOGI(TAG, "Status: Waiting for commissioning");
+    ESP_LOGI(TAG, "");
+    ESP_LOGI(TAG, "=== COMMISSIONING CODES ===");
+
+    // Generate QR code and manual pairing code for WiFi (OnNetwork)
+    char qrCodeBuffer[QRCodeBasicSetupPayloadGenerator::kMaxQRCodeBase38RepresentationLength + 1];
+    char manualCodeBuffer[QRCodeBasicSetupPayloadGenerator::kMaxQRCodeBase38RepresentationLength +
+                          1];
+
+    chip::MutableCharSpan qrCode(qrCodeBuffer, sizeof(qrCodeBuffer));
+    chip::MutableCharSpan manualCode(manualCodeBuffer, sizeof(manualCodeBuffer));
+
+    // Use OnNetwork rendezvous for WiFi devices
+    chip::RendezvousInformationFlags rendezvousFlags(chip::RendezvousInformationFlag::kOnNetwork);
+
+    // Get QR code
+    if (GetQRCode(qrCode, rendezvousFlags) == CHIP_NO_ERROR) {
+        ESP_LOGI(TAG, "");
+        ESP_LOGI(TAG, "QR Code: %s", qrCode.data());
+        ESP_LOGI(TAG, "");
+        ESP_LOGI(TAG, "Copy/paste this URL to see QR code in browser:");
+
+        // Generate QR code URL
+        char qrCodeUrl[512];
+        if (GetQRCodeUrl(qrCodeUrl, sizeof(qrCodeUrl), qrCode) == CHIP_NO_ERROR) {
+            ESP_LOGI(TAG, "%s", qrCodeUrl);
+        }
     } else {
-        ESP_LOGI(TAG, "Status: Waiting for commissioning");
-        ESP_LOGI(TAG, "Add to HomeKit: Scan QR code or enter pairing code");
+        ESP_LOGI(TAG, "Failed to generate QR code");
     }
+
+    // Get manual pairing code
+    if (GetManualPairingCode(manualCode, rendezvousFlags) == CHIP_NO_ERROR) {
+        ESP_LOGI(TAG, "");
+        ESP_LOGI(TAG, "Manual setup code: %s", manualCode.data());
+    } else {
+        ESP_LOGI(TAG, "Failed to generate manual pairing code");
+    }
+
+    ESP_LOGI(TAG, "");
+    ESP_LOGI(TAG, "Add to HomeKit: Scan QR code or enter manual setup code");
+    ESP_LOGI(TAG, "===========================");
     ESP_LOGI(TAG, "==================================");
 }
 
@@ -278,14 +302,7 @@ extern "C" void app_main(void)
 
     // Main loop - monitor status
     while (1) {
-        if (matter_sensor_is_commissioned()) {
-            ESP_LOGI(TAG, "Matter device is commissioned and running...");
-            ESP_LOGI(TAG, "Current temperature: %.2f°C", current_temperature / 100.0);
-        } else {
-            ESP_LOGI(TAG, "Matter device waiting for commissioning...");
-            ESP_LOGI(TAG, "Use Apple Home, Google Home, or other Matter controller to add device");
-        }
-
+        ESP_LOGI(TAG, "Current temperature: %.2f°C", current_temperature / 100.0);
         vTaskDelay(pdMS_TO_TICKS(30000)); // Status update every 30 seconds
     }
 }
