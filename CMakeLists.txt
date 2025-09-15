@@ -42,16 +42,10 @@ set(MAIN_SOURCE "${MAIN_SOURCE}" CACHE STRING "Resolved source for selected modu
 string(FIND "${MAIN_MODULE}" "matter" _mm_pos)
 if(NOT _mm_pos EQUAL -1)
   set(ESP_MATTER_PATH "${CMAKE_CURRENT_SOURCE_DIR}/esp-matter" CACHE PATH "Path to ESP-Matter")
-  set(EXTRA_COMPONENT_DIRS "${ESP_MATTER_PATH}/components")
+  list(APPEND EXTRA_COMPONENT_DIRS "${ESP_MATTER_PATH}/components")
 endif()
 
 # ESP-IDF integration
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-
-# Set components: main + ESP-Matter components when building matter modules
-set(COMPONENTS main)
-if(NOT _mm_pos EQUAL -1)
-  list(APPEND COMPONENTS esp_matter)
-endif()
 
 project(esp32_multi)
