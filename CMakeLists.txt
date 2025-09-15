@@ -48,7 +48,10 @@ endif()
 # ESP-IDF integration
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
-# Optional: restrict to components
+# Set components: main + ESP-Matter components when building matter modules
 set(COMPONENTS main)
+if(NOT _mm_pos EQUAL -1)
+  list(APPEND COMPONENTS esp_matter)
+endif()
 
 project(esp32_multi)

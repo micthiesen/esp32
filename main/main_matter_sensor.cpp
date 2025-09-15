@@ -5,8 +5,6 @@
    and other Matter-compatible ecosystems.
 */
 
-#include <app/server/CommissioningWindowManager.h>
-#include <app/server/Server.h>
 #include <esp_check.h>
 #include <esp_err.h>
 #include <esp_log.h>
@@ -24,6 +22,7 @@ using namespace esp_matter;
 using namespace esp_matter::attribute;
 using namespace esp_matter::endpoint;
 using namespace chip::app::Clusters;
+using namespace chip::DeviceLayer;
 
 // Temperature simulation variables
 static bool sensor_initialized = false;
@@ -40,7 +39,7 @@ static void update_temperature_attribute(int16_t temperature_celsius_x100)
     }
 
     // Schedule the attribute update on the Matter thread
-    chip::DeviceLayer::SystemLayer().ScheduleLambda([temperature_celsius_x100]() {
+    SystemLayer().ScheduleLambda([temperature_celsius_x100]() {
         attribute_t *attribute =
             attribute::get(temperature_endpoint_id, TemperatureMeasurement::Id,
                            TemperatureMeasurement::Attributes::MeasuredValue::Id);
@@ -92,48 +91,30 @@ static void temperature_simulation_task(void *pvParameters)
     }
 }
 
-// Open commissioning window if no fabrics are configured
-static void open_commissioning_window_if_necessary()
+// Check if device is commissioned
+static bool is_commissioned()
 {
-    if (chip::Server::GetInstance().GetFabricTable().FabricCount() > 0) {
-        return;
-    }
-
-    chip::CommissioningWindowManager &commissionMgr =
-        chip::Server::GetInstance().GetCommissioningWindowManager();
-    if (commissionMgr.IsCommissioningWindowOpen()) {
-        return;
-    }
-
-    // Open commissioning window for 5 minutes
-    CHIP_ERROR err = commissionMgr.OpenBasicCommissioningWindow(
-        chip::System::Clock::Seconds16(300), chip::CommissioningWindowAdvertisement::kDnssdOnly);
-
-    if (err != CHIP_NO_ERROR) {
-        ESP_LOGE(TAG, "Failed to open commissioning window, err:%" CHIP_ERROR_FORMAT, err.Format());
-    } else {
-        ESP_LOGI(TAG, "Commissioning window opened for 5 minutes");
-    }
+    // Use ESP-Matter's commissioning status check
+    return esp_matter::is_commissioned();
 }
 
 // Matter event callback
 static void app_event_cb(const ChipDeviceEvent *event, intptr_t arg)
 {
     switch (event->Type) {
-    case chip::DeviceLayer::DeviceEventType::kCommissioningComplete:
+    case DeviceEventType::kCommissioningComplete:
         ESP_LOGI(TAG, "Commissioning complete - device paired successfully!");
         break;
 
-    case chip::DeviceLayer::DeviceEventType::kFailSafeTimerExpired:
+    case DeviceEventType::kFailSafeTimerExpired:
         ESP_LOGI(TAG, "Commissioning failed, fail safe timer expired");
         break;
 
-    case chip::DeviceLayer::DeviceEventType::kFabricRemoved:
+    case DeviceEventType::kFabricRemoved:
         ESP_LOGI(TAG, "Fabric removed successfully");
-        open_commissioning_window_if_necessary();
         break;
 
-    case chip::DeviceLayer::DeviceEventType::kBLEDeinitialized:
+    case DeviceEventType::kBLEDeinitialized:
         ESP_LOGI(TAG, "BLE deinitialized and memory reclaimed");
         break;
 
@@ -241,8 +222,7 @@ static esp_err_t matter_sensor_start(void)
     sensor_started = true;
     ESP_LOGI(TAG, "Matter sensor started successfully");
 
-    // Open commissioning window if not yet commissioned
-    open_commissioning_window_if_necessary();
+    // ESP-Matter will automatically handle commissioning window
 
     return ESP_OK;
 }
@@ -253,7 +233,7 @@ static bool matter_sensor_is_commissioned(void)
         return false;
     }
 
-    return chip::Server::GetInstance().GetFabricTable().FabricCount() > 0;
+    return is_commissioned();
 }
 
 static void print_commissioning_info(void)
@@ -265,8 +245,6 @@ static void print_commissioning_info(void)
 
     if (matter_sensor_is_commissioned()) {
         ESP_LOGI(TAG, "Status: Commissioned and ready");
-        ESP_LOGI(TAG, "Fabrics: %d",
-                 static_cast<int>(chip::Server::GetInstance().GetFabricTable().FabricCount()));
     } else {
         ESP_LOGI(TAG, "Status: Waiting for commissioning");
         ESP_LOGI(TAG, "Add to HomeKit: Scan QR code or enter pairing code");
