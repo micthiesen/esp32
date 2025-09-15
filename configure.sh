@@ -91,12 +91,18 @@ echo "Configuring project with:"
 echo "  Module: $selected_module"
 echo "  Target: $selected_target"
 
-# Set ESP_MATTER_PATH if module contains "matter"
+# Set ESP_MATTER_PATH and partition table if module contains "matter"
 if [[ "$selected_module" == *"matter"* ]]; then
   export ESP_MATTER_PATH="~/Code/esp-matter"
   # Expand tilde for actual path
   ESP_MATTER_PATH="${ESP_MATTER_PATH/#\~/$HOME}"
   echo "  ESP_MATTER_PATH: $ESP_MATTER_PATH"
+  echo "  Using Matter partition table (2MB app partitions)"
+
+  # Configure for Matter: enable custom partition table and HKDF
+  echo "CONFIG_PARTITION_TABLE_CUSTOM=y" >> sdkconfig
+  echo "CONFIG_PARTITION_TABLE_CUSTOM_FILENAME=\"partitions_matter.csv\"" >> sdkconfig
+  echo "CONFIG_MBEDTLS_HKDF_C=y" >> sdkconfig
 fi
 
 # Clean any existing build to avoid conflicts
