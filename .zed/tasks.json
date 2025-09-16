@@ -48,14 +48,6 @@
     "tags": ["monitor", "rust", "esp32"]
   },
   {
-    "label": "Run (cargo run)",
-    "command": "cargo run",
-    "cwd": "$ZED_WORKTREE_ROOT",
-    "reveal": "always",
-    "hide": "never",
-    "tags": ["run", "flash", "monitor", "rust", "esp32"]
-  },
-  {
     "label": "List Ports",
     "command": "cargo espflash list-ports",
     "cwd": "$ZED_WORKTREE_ROOT",
