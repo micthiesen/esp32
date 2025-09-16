@@ -1,28 +1,9 @@
 CompileFlags:
-  Add:
-    - "-I./esp-idf/components/esp_common/include"
-    - "-I./esp-idf/components/esp_system/include"
-    - "-I./esp-idf/components/freertos/FreeRTOS-Kernel/include"
-    - "-I./esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/include"
-    - "-I./esp-idf/components/freertos/esp_additions/include"
-    - "-I./esp-idf/components/driver/gpio/include"
-    - "-I./esp-idf/components/driver/include"
-    - "-I./esp-idf/components/esp_log/include"
-    - "-I./esp-idf/components/esp_wifi/include"
-    - "-I./esp-idf/components/esp_event/include"
-    - "-I./esp-idf/components/nvs_flash/include"
-    - "-I./esp-idf/components/lwip/include"
-    - "-I./esp-idf/components/esp_netif/include"
-    - "-I./esp-idf/components/esp_adc/include"
-    - "-I./esp-idf/components/hal/include"
-    - "-I./esp-idf/components/soc/esp32/include"
-    - "-I./components/helpers/include"
-    - "-I./components/wifi_helper/include"
+  CompilationDatabase: build
   Remove:
+    - "-m*"
+    - "-f*"
     - "-Wno-unknown-warning-option"
-    - "-fno-shrink-wrap"
-    - "-fno-tree-switch-conversion"
-    - "-fstrict-volatile-bitfields"
 Index:
   Background: Build
 Diagnostics:

@@ -5,7 +5,9 @@
    and other Matter-compatible ecosystems.
 */
 
+#include <app/ConcreteAttributePath.h>
 #include <app/server/OnboardingCodesUtil.h>
+#include <app/util/basic-types.h>
 #include <esp_check.h>
 #include <esp_err.h>
 #include <esp_log.h>
@@ -13,8 +15,13 @@
 #include <esp_matter_ota.h>
 #include <freertos/FreeRTOS.h> // IWYU pragma: keep
 #include <freertos/task.h>
+#include <lib/core/ErrorStr.h>
+#include <lib/support/CHIPMem.h>
+#include <lib/support/CodeUtils.h>
+#include <lib/support/Span.h>
 #include <nvs_flash.h>
 #include <protocols/secure_channel/RendezvousParameters.h>
+#include <setup_payload/AdditionalDataPayloadGenerator.h>
 #include <setup_payload/QRCodeSetupPayloadGenerator.h>
 #include <setup_payload/SetupPayload.h>
 #include <stdbool.h>
@@ -75,11 +82,12 @@ static void temperature_simulation_task(void *pvParameters)
 {
     ESP_LOGI(TAG, "Temperature simulation task started");
 
-    while (1) {
+    while (true) {
         if (sensor_started && temperature_endpoint_id != 0) {
             // Simulate temperature variations (20°C to 26°C)
             static int direction = 1;
-            current_temperature += (direction * 10); // ±0.1°C changes
+            current_temperature =
+                static_cast<int16_t>(current_temperature + (direction * 10)); // ±0.1°C changes
 
             // Change direction at boundaries
             if (current_temperature >= 2600) { // 26°C
@@ -122,8 +130,10 @@ static void app_event_cb(const ChipDeviceEvent *event, intptr_t arg)
 }
 
 // Matter identification callback
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 static esp_err_t app_identification_cb(identification::callback_type_t type, uint16_t endpoint_id,
-                                       uint8_t effect_id, uint8_t effect_variant, void *priv_data)
+                                       uint8_t effect_id, uint8_t effect_variant,
+                                       void * /* priv_data */)
 {
     ESP_LOGI(TAG, "Identification callback: type: %u, effect: %u, variant: %u", type, effect_id,
              effect_variant);
@@ -131,9 +141,10 @@ static esp_err_t app_identification_cb(identification::callback_type_t type, uin
 }
 
 // Matter attribute update callback
-static esp_err_t app_attribute_update_cb(attribute::callback_type_t type, uint16_t endpoint_id,
-                                         uint32_t cluster_id, uint32_t attribute_id,
-                                         esp_matter_attr_val_t *val, void *priv_data)
+static esp_err_t app_attribute_update_cb(attribute::callback_type_t /* type */,
+                                         uint16_t /* endpoint_id */, uint32_t /* cluster_id */,
+                                         uint32_t /* attribute_id */,
+                                         esp_matter_attr_val_t * /* val */, void * /* priv_data */)
 {
     // Temperature sensor is read-only, so no writes expected
     return ESP_OK;
@@ -245,7 +256,7 @@ static void print_commissioning_info(void)
     chip::MutableCharSpan manualCode(manualCodeBuffer, sizeof(manualCodeBuffer));
 
     // Use OnNetwork rendezvous for WiFi devices
-    chip::RendezvousInformationFlags rendezvousFlags(chip::RendezvousInformationFlag::kOnNetwork);
+    chip::RendezvousInformationFlag rendezvousFlags(chip::RendezvousInformationFlag::kOnNetwork);
 
     // Get QR code
     if (GetQRCode(qrCode, rendezvousFlags) == CHIP_NO_ERROR) {
@@ -261,14 +272,6 @@ static void print_commissioning_info(void)
         }
     } else {
         ESP_LOGI(TAG, "Failed to generate QR code");
-    }
-
-    // Get manual pairing code
-    if (GetManualPairingCode(manualCode, rendezvousFlags) == CHIP_NO_ERROR) {
-        ESP_LOGI(TAG, "");
-        ESP_LOGI(TAG, "Manual setup code: %s", manualCode.data());
-    } else {
-        ESP_LOGI(TAG, "Failed to generate manual pairing code");
     }
 
     ESP_LOGI(TAG, "");
@@ -302,7 +305,7 @@ extern "C" void app_main(void)
     print_commissioning_info();
 
     // Main loop - monitor status
-    while (1) {
+    while (true) {
         ESP_LOGI(TAG, "Current temperature: %.2f°C", current_temperature / 100.0);
         vTaskDelay(pdMS_TO_TICKS(30000)); // Status update every 30 seconds
     }
