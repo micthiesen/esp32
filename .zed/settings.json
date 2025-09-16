@@ -1,42 +1,5 @@
 {
-  "languages": {
-    "C": {
-      "language_servers": ["clangd"],
-      "format_on_save": {
-        "external": {
-          "command": "clang-format",
-          "arguments": []
-        }
-      },
-      "tab_size": 4,
-      "hard_tabs": false
-    },
-    "C++": {
-      "language_servers": ["clangd"],
-      "format_on_save": {
-        "external": {
-          "command": "clang-format",
-          "arguments": []
-        }
-      },
-      "tab_size": 4,
-      "hard_tabs": false
-    }
-  },
-  "lsp": {
-    "clangd": {
-      "binary": {
-        "path": "/opt/homebrew/opt/llvm/bin/clangd",
-        "arguments": [
-          "--background-index",
-          "--clang-tidy",
-          "--completion-style=detailed",
-          "--header-insertion=never",
-          "--query-driver=/Users/michael/.espressif/tools/xtensa-esp-elf/esp-13.2.0_20240530/xtensa-esp-elf/bin/xtensa-esp32-elf-gcc",
-          "--compile-commands-dir=build"
-        ]
-      }
-    }
-  },
+  "languages": {},
+  "lsp": {},
   "file_scan_exclusions": ["**/.git"]
 }
