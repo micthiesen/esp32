@@ -1,1 +1,131 @@
-[]
+[
+  {
+    "label": "Build (Debug)",
+    "command": "cargo build",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "hide": "on_success",
+    "tags": ["build", "rust", "esp32"]
+  },
+  {
+    "label": "Build (Release)",
+    "command": "cargo build --release",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "hide": "on_success",
+    "tags": ["build", "rust", "esp32"]
+  },
+  {
+    "label": "Clean Build",
+    "command": "cargo clean && cargo build",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "hide": "on_success",
+    "tags": ["build", "rust", "esp32"]
+  },
+  {
+    "label": "Flash & Monitor",
+    "command": "cargo espflash flash --monitor",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "hide": "never",
+    "tags": ["flash", "monitor", "rust", "esp32"]
+  },
+  {
+    "label": "Flash Only",
+    "command": "cargo espflash flash",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "hide": "on_success",
+    "tags": ["flash", "rust", "esp32"]
+  },
+  {
+    "label": "Monitor Only",
+    "command": "cargo espflash monitor",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "hide": "never",
+    "tags": ["monitor", "rust", "esp32"]
+  },
+  {
+    "label": "Run (cargo run)",
+    "command": "cargo run",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "hide": "never",
+    "tags": ["run", "flash", "monitor", "rust", "esp32"]
+  },
+  {
+    "label": "List Ports",
+    "command": "cargo espflash list-ports",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "hide": "on_success",
+    "tags": ["device", "esp32"]
+  },
+  {
+    "label": "Device Info",
+    "command": "cargo espflash board-info",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "hide": "on_success",
+    "tags": ["device", "esp32"]
+  },
+  {
+    "label": "Erase Flash",
+    "command": "cargo espflash erase-flash",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "hide": "on_success",
+    "tags": ["device", "esp32"]
+  },
+  {
+    "label": "Check",
+    "command": "cargo check",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "hide": "on_success",
+    "tags": ["check", "rust"]
+  },
+  {
+    "label": "Format",
+    "command": "cargo fmt",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "hide": "on_success",
+    "tags": ["format", "rust"]
+  },
+  {
+    "label": "Clippy",
+    "command": "cargo clippy",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "hide": "on_success",
+    "tags": ["lint", "rust"]
+  },
+  {
+    "label": "Flash (Release)",
+    "command": "cargo espflash flash --release --monitor",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "hide": "never",
+    "tags": ["flash", "monitor", "release", "rust", "esp32"]
+  },
+  {
+    "label": "Save Firmware Image",
+    "command": "cargo espflash save-image --chip esp32c3 esp32-firmware.bin",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "hide": "on_success",
+    "tags": ["build", "esp32"]
+  },
+  {
+    "label": "Claude Code",
+    "command": "claude-code",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "reveal": "always",
+    "hide": "never",
+    "use_new_terminal": true,
+    "tags": ["ai", "assistant", "claude"]
+  }
+]

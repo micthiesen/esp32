@@ -46,7 +46,11 @@
       "Bash(git lfs clone:*)",
       "Bash(git lfs install:*)",
       "Bash(git lfs pull:*)",
-      "Bash(git lfs:*)"
+      "Bash(git lfs:*)",
+      "Bash(cargo:*)",
+      "Bash(espup install:*)",
+      "Bash(rustup target:*)",
+      "Bash(espflash:*)"
     ],
     "deny": [],
     "ask": []
