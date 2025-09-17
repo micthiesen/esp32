@@ -15,7 +15,10 @@ pub fn run() -> Result<()> {
     // Load configuration (will fail build if config.toml is missing)
     let config = config::get_config();
 
-    info!("Starting ESP32-C3 Matter Light Device: {}", config.device.name);
+    info!(
+        "Starting ESP32-C3 Matter Light Device: {}",
+        config.device.name
+    );
     info!("WiFi SSID: {}", config.wifi.ssid);
     info!("Matter vendor ID: {}", config.matter.vendor_id);
 

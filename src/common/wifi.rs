@@ -24,13 +24,12 @@ impl WifiConnection {
     pub fn connect(&mut self, ssid: &str, password: &str) -> Result<()> {
         info!("Configuring WiFi for SSID: {}", ssid);
 
-        self.wifi.set_configuration(&Configuration::Client(
-            ClientConfiguration {
+        self.wifi
+            .set_configuration(&Configuration::Client(ClientConfiguration {
                 ssid: ssid.try_into().unwrap(),
                 password: password.try_into().unwrap(),
                 ..Default::default()
-            },
-        ))?;
+            }))?;
 
         info!("Starting WiFi...");
         self.wifi.start()?;

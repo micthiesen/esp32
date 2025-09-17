@@ -1,9 +1,7 @@
 use crate::common::{config, init, wifi::WifiConnection};
 use anyhow::Result;
 use esp_idf_svc::{
-    eventloop::EspSystemEventLoop,
-    hal::peripherals::Peripherals,
-    nvs::EspDefaultNvsPartition,
+    eventloop::EspSystemEventLoop, hal::peripherals::Peripherals, nvs::EspDefaultNvsPartition,
 };
 use log::info;
 use std::time::Duration;
@@ -33,7 +31,7 @@ pub fn run() -> Result<()> {
     // Main loop - display useful WiFi information
     loop {
         match display_wifi_info(&wifi) {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(e) => info!("❌ Error getting WiFi info: {}", e),
         }
 
@@ -67,9 +65,11 @@ fn display_wifi_info(wifi: &WifiConnection) -> Result<()> {
     // Get MAC address
     match wifi_driver.get_mac(esp_idf_svc::wifi::WifiDeviceId::Sta) {
         Ok(mac) => {
-            info!("MAC Address: {:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",
-                mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-        },
+            info!(
+                "MAC Address: {:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",
+                mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]
+            );
+        }
         Err(e) => {
             info!("⚠️  Could not get MAC address: {}", e);
         }
@@ -82,13 +82,16 @@ fn display_wifi_info(wifi: &WifiConnection) -> Result<()> {
                 info!("Configured SSID: {}", client_config.ssid.as_str());
                 info!("Auth Method: {:?}", client_config.auth_method);
             }
-        },
+        }
         Err(e) => {
             info!("⚠️  Could not get WiFi configuration: {}", e);
         }
     }
 
-    info!("Network interface name: {}", wifi_driver.sta_netif().get_key());
+    info!(
+        "Network interface name: {}",
+        wifi_driver.sta_netif().get_key()
+    );
     info!("==================");
 
     Ok(())
