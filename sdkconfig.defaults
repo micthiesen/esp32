@@ -32,3 +32,6 @@ CONFIG_MDNS_MAX_SERVICES=10
 
 # TCP/IP settings for Matter
 CONFIG_LWIP_MAX_SOCKETS=16
+
+# Partition table - use large single app partition for 4MB flash
+CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y
