@@ -57,4 +57,8 @@ impl WifiConnection {
         info!("WiFi disconnected");
         Ok(())
     }
+
+    pub fn wifi(&self) -> &BlockingWifi<EspWifi<'static>> {
+        &self.wifi
+    }
 }
