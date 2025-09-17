@@ -39,5 +39,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
       - name: Install ldproxy
         run: cargo install ldproxy
+      - name: Copy config
+        run: cp config.toml.example config.toml
       - name: Run command
         run: cargo ${{ matrix.action.command }} ${{ matrix.action.args }}
