@@ -1,0 +1,14 @@
+# ESP32 Configuration File
+# Copy this file to config.toml and fill in your actual values
+# config.toml is gitignored to keep your credentials safe
+
+[wifi]
+ssid = "your-wifi-network-name"
+password = "your-wifi-password"
+
+[device]
+name = "MESP32"
+led_pin = 8
+
+[matter]
+vendor_id = 65521  # 0xFFF1 - Test vendor ID

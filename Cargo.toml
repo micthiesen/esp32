@@ -27,6 +27,10 @@ log = "0.4"
 esp-idf-svc = { version = "0.51", features = ["experimental", "alloc"] }
 anyhow = "1"
 
+# Configuration parsing
+toml = { version = "0.8", default-features = false, features = ["parse"] }
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+
 # Matter dependencies (to be added when dependency conflicts are resolved)
 # esp-idf-matter = { git = "https://github.com/ivmarkov/esp-idf-matter" }
 

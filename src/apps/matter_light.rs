@@ -1,4 +1,4 @@
-use crate::common::{init, led::LedController, wifi::WifiConnection};
+use crate::common::{config, init, led::LedController, wifi::WifiConnection};
 use anyhow::Result;
 use esp_idf_svc::{
     eventloop::EspSystemEventLoop,
@@ -9,15 +9,15 @@ use esp_idf_svc::{
 use log::info;
 use std::time::Duration;
 
-// Configure your WiFi credentials here
-// You can also set them as environment variables: WIFI_SSID and WIFI_PASS
-const SSID: &str = "your-wifi-ssid";    // Replace with your WiFi SSID
-const PASS: &str = "your-wifi-password"; // Replace with your WiFi password
-
 pub fn run() -> Result<()> {
     init::init_esp()?;
 
-    info!("Starting ESP32-C3 Matter Light Device!");
+    // Load configuration (will fail build if config.toml is missing)
+    let config = config::get_config();
+
+    info!("Starting ESP32-C3 Matter Light Device: {}", config.device.name);
+    info!("WiFi SSID: {}", config.wifi.ssid);
+    info!("Matter vendor ID: {}", config.matter.vendor_id);
 
     // Initialize peripherals
     let peripherals = Peripherals::take()?;
@@ -25,13 +25,20 @@ pub fn run() -> Result<()> {
     let nvs = EspDefaultNvsPartition::take()?;
     let _timer_service = EspTaskTimerService::new()?;
 
-    // Configure LED (GPIO 8 on ESP32-C3)
+    // Configure LED using pin from config
+    // Note: For now we'll just use GPIO 8, but config validation ensures it's set correctly
+    if config.device.led_pin != 8 {
+        return Err(anyhow::anyhow!(
+            "Currently only GPIO 8 is supported for LED, got: {}",
+            config.device.led_pin
+        ));
+    }
     let led_pin = PinDriver::output(peripherals.pins.gpio8)?;
     let led = LedController::new(led_pin);
 
-    // Initialize and connect WiFi
+    // Initialize and connect WiFi using config
     let mut wifi = WifiConnection::new(peripherals.modem, sys_loop, Some(nvs))?;
-    wifi.connect(SSID, PASS)?;
+    wifi.connect(&config.wifi.ssid, &config.wifi.password)?;
 
     // For now, we'll implement basic functionality without full Matter stack
     // This serves as a foundation that can be extended with Matter protocol later
