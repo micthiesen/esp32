@@ -50,7 +50,8 @@
       "Bash(cargo:*)",
       "Bash(espup install:*)",
       "Bash(rustup target:*)",
-      "Bash(espflash:*)"
+      "Bash(espflash:*)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ],
     "deny": [],
     "ask": []

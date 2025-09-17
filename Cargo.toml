@@ -24,8 +24,11 @@ experimental = ["esp-idf-svc/experimental"]
 
 [dependencies]
 log = "0.4"
-esp-idf-svc = "0.51"
+esp-idf-svc = { version = "0.51", features = ["experimental", "alloc"] }
 anyhow = "1"
+
+# Matter dependencies (to be added when dependency conflicts are resolved)
+# esp-idf-matter = { git = "https://github.com/ivmarkov/esp-idf-matter" }
 
 # --- Optional Embassy Integration ---
 # esp-idf-svc = { version = "0.51", features = ["critical-section", "embassy-time-driver", "embassy-sync"] }
