@@ -1,5 +1,9 @@
 {
-  "languages": {},
+  "languages": {
+    "Rust": {
+      "format_on_save": "on" // use rustfmt via rust-analyzer
+    }
+  },
   "lsp": {},
   "file_scan_exclusions": ["**/.git"]
 }
