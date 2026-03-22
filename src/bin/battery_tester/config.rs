@@ -10,7 +10,10 @@ pub const CUTOFF_CONSECUTIVE_READINGS: u8 = 3;
 
 // Timing
 pub const SAMPLE_INTERVAL_MS: u64 = 1000;
-pub const LOG_INTERVAL_S: u32 = 10;
+pub const SCAN_SETTLE_MS: u64 = 500;
+pub const LOG_INTERVAL_SAMPLES: u32 = 10;
+pub const MAX_DISCHARGE_S: u32 = 8 * 3600; // 8 hours
+pub const ADC_ERROR_LIMIT: u8 = 5;
 
 // Capacity thresholds (mAh)
 pub const AA_GOOD_MAH: f32 = 1600.0;
@@ -22,8 +25,11 @@ pub const AAA_WEAK_MAH: f32 = 400.0;
 pub const NUM_CHANNELS: usize = 8;
 
 // Pushover notification (set via env vars in .cargo/config.toml)
+#[cfg(feature = "wifi")]
 pub const PUSHOVER_TOKEN: &str = env!("PUSHOVER_TOKEN");
+#[cfg(feature = "wifi")]
 pub const PUSHOVER_USER: &str = env!("PUSHOVER_USER");
+#[cfg(feature = "wifi")]
 pub const NOTIFY_URL: &str = env!("NOTIFY_URL");
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

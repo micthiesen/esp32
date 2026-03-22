@@ -1,0 +1,9 @@
+name: 'Battery Tester Continuous Mode'
+version: 1
+steps:
+  - wait-serial: 'discharge started'
+  - wait-serial: 'COMPLETE'
+  - wait-serial: 'COMPLETE'
+  - delay: 2s
+  - write-serial: "STATUS\n"
+  - wait-serial: 'Done'

@@ -4,24 +4,34 @@ use embassy_time::{Duration, Timer};
 use esp_println::println;
 use heapless::String;
 
-use crate::channel::{ChannelState, SharedState};
+use crate::channel::{ChannelError, ChannelState, SharedState};
 use crate::config::{BatteryResult, SlotType, NUM_CHANNELS};
 
 #[derive(Clone, Copy, Debug)]
 pub enum SerialCommand {
-    Start,
     Status,
     Stop,
+    StopSlot(usize),
 }
 
 fn parse_command(s: &str) -> Option<SerialCommand> {
     let trimmed = s.trim();
-    if trimmed.eq_ignore_ascii_case("START") {
-        Some(SerialCommand::Start)
-    } else if trimmed.eq_ignore_ascii_case("STATUS") {
+    if trimmed.eq_ignore_ascii_case("STATUS") {
         Some(SerialCommand::Status)
     } else if trimmed.eq_ignore_ascii_case("STOP") {
         Some(SerialCommand::Stop)
+    } else if trimmed.len() > 4 && trimmed[..4].eq_ignore_ascii_case("STOP") {
+        // "STOP 3" or "STOP3"
+        let num_str = trimmed[4..].trim();
+        if let Ok(n) = num_str.parse::<usize>() {
+            if (1..=8).contains(&n) {
+                Some(SerialCommand::StopSlot(n - 1))
+            } else {
+                None
+            }
+        } else {
+            None
+        }
     } else {
         None
     }
@@ -39,6 +49,7 @@ fn print_status(states: &[ChannelState; NUM_CHANNELS]) {
             SlotType::AAA => "AAA ",
         };
 
+        // State column is exactly 34 chars wide (between │ delimiters)
         match state {
             ChannelState::Idle => {
                 println!(
@@ -54,14 +65,6 @@ fn print_status(states: &[ChannelState; NUM_CHANNELS]) {
                     type_str
                 );
             }
-            ChannelState::Ready { ocv } => {
-                println!(
-                    "│  {:>2}  │ {} │ Ready  OCV={:.3}V                │",
-                    i + 1,
-                    type_str,
-                    ocv
-                );
-            }
             ChannelState::Discharging {
                 capacity_mah,
                 voltage,
@@ -69,7 +72,7 @@ fn print_status(states: &[ChannelState; NUM_CHANNELS]) {
                 elapsed_s,
             } => {
                 println!(
-                    "│  {:>2}  │ {} │ Disch  {:.0}mAh {:.3}V {:.0}mA {:>4}s │",
+                    "│  {:>2}  │ {} │ Disch {:>4.0}mAh {:.3}V {:>3.0}mA {:>5}s│",
                     i + 1,
                     type_str,
                     capacity_mah,
@@ -90,7 +93,7 @@ fn print_status(states: &[ChannelState; NUM_CHANNELS]) {
                     BatteryResult::Dead => "DEAD",
                 };
                 println!(
-                    "│  {:>2}  │ {} │ Done   {:.0}mAh {:>4}s {}        │",
+                    "│  {:>2}  │ {} │ Done  {:>4.0}mAh {:>5}s {:<4}        │",
                     i + 1,
                     type_str,
                     capacity_mah,
@@ -100,11 +103,12 @@ fn print_status(states: &[ChannelState; NUM_CHANNELS]) {
             }
             ChannelState::Error(err) => {
                 let err_str = match err {
-                    crate::channel::ChannelError::NoBattery => "No battery",
-                    crate::channel::ChannelError::WrongChemistry => "Wrong chemistry",
-                    crate::channel::ChannelError::NotCharged => "Not charged",
+                    ChannelError::WrongChemistry => "Wrong chemistry",
+                    ChannelError::NotCharged => "Not charged",
+                    ChannelError::Timeout => "Timeout",
+                    ChannelError::AdcFault => "ADC fault",
                 };
-                println!("│  {:>2}  │ {} │ Error: {:<24} │", i + 1, type_str, err_str);
+                println!("│  {:>2}  │ {} │ Error: {:<26}│", i + 1, type_str, err_str);
             }
         }
     }
@@ -121,6 +125,14 @@ pub async fn serial_task(
     let mut byte_buf = [0u8; 1];
 
     loop {
+        // Yield to let other tasks run
+        Timer::after(Duration::from_millis(10)).await;
+
+        // Only read when data is available (uart.read may block otherwise)
+        if !uart.read_ready() {
+            continue;
+        }
+
         match uart.read(&mut byte_buf) {
             Ok(n) if n > 0 => {
                 let b = byte_buf[0];
@@ -135,18 +147,18 @@ pub async fn serial_task(
                                     drop(states);
                                     print_status(&snapshot);
                                 }
-                                other => {
-                                    let _ = command_tx.try_send(other);
-                                    match other {
-                                        SerialCommand::Start => println!(">> Starting..."),
-                                        SerialCommand::Stop => println!(">> Stopping..."),
-                                        _ => {}
-                                    }
+                                SerialCommand::Stop => {
+                                    println!(">> Stopping...");
+                                    let _ = command_tx.try_send(cmd);
+                                }
+                                SerialCommand::StopSlot(slot) => {
+                                    println!(">> Stopping slot {}...", slot + 1);
+                                    let _ = command_tx.try_send(cmd);
                                 }
                             }
                         } else {
                             println!("Unknown command: {}", line_buf.as_str());
-                            println!("Commands: START, STATUS, STOP");
+                            println!("Commands: STATUS, STOP [N]");
                         }
                         line_buf.clear();
                     }
@@ -155,12 +167,7 @@ pub async fn serial_task(
                     line_buf.clear();
                 }
             }
-            Ok(_) => {
-                Timer::after(Duration::from_millis(50)).await;
-            }
-            Err(_) => {
-                Timer::after(Duration::from_millis(50)).await;
-            }
+            _ => {}
         }
     }
 }

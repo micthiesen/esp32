@@ -20,7 +20,6 @@ fn color_for_state(state: &ChannelState, frame: u32) -> RGB8 {
     match state {
         ChannelState::Idle => RGB8 { r: 0, g: 0, b: 0 },
         ChannelState::Scanning => dim(255, 80, 0),
-        ChannelState::Ready { .. } => dim(0, 255, 0),
         ChannelState::Discharging { .. } => {
             if (frame / 5) % 2 == 0 {
                 dim(0, 0, 255)
@@ -28,9 +27,9 @@ fn color_for_state(state: &ChannelState, frame: u32) -> RGB8 {
                 RGB8 { r: 0, g: 0, b: 0 }
             }
         }
-        ChannelState::Complete { .. } => dim(0, 255, 0),
+        // Complete is handled by color_for_complete at the call site
+        ChannelState::Complete { .. } => unreachable!(),
         ChannelState::Error(err) => match err {
-            ChannelError::NoBattery => dim(255, 0, 0),
             ChannelError::WrongChemistry => {
                 if (frame / 1) % 2 == 0 {
                     dim(255, 0, 0)
@@ -45,6 +44,8 @@ fn color_for_state(state: &ChannelState, frame: u32) -> RGB8 {
                     RGB8 { r: 0, g: 0, b: 0 }
                 }
             }
+            ChannelError::Timeout => dim(255, 0, 0),
+            ChannelError::AdcFault => dim(255, 0, 0),
         },
     }
 }

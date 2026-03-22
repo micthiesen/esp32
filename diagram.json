@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "author": "battery-tester",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32-c3-devkitm-1",
+      "id": "esp",
+      "top": 0,
+      "left": 0
+    },
+    {
+      "type": "wokwi-neopixel",
+      "id": "led-strip",
+      "top": -100,
+      "left": 200,
+      "attrs": { "numPixels": "8" }
+    },
+    {
+      "type": "chip-ads1115",
+      "id": "adc1",
+      "top": 100,
+      "left": 300,
+      "attrs": {
+        "i2c_address": "72",
+        "voltage_a0": "1.35",
+        "voltage_a1": "1.25",
+        "voltage_a2": "0.0",
+        "voltage_a3": "1.55",
+        "decay_mv_per_sec": "6.0"
+      }
+    },
+    {
+      "type": "chip-ads1115",
+      "id": "adc2",
+      "top": 250,
+      "left": 300,
+      "attrs": {
+        "i2c_address": "73",
+        "voltage_a0": "1.35",
+        "voltage_a1": "1.25",
+        "voltage_a2": "0.0",
+        "voltage_a3": "1.55",
+        "decay_mv_per_sec": "6.0"
+      }
+    }
+  ],
+  "connections": [
+    ["esp:TX", "$serialMonitor:RX", "", []],
+    ["esp:RX", "$serialMonitor:TX", "", []],
+
+    ["esp:10",    "led-strip:DIN", "green", []],
+    ["esp:3V3.1", "led-strip:VDD", "red",   []],
+    ["esp:GND.1", "led-strip:VSS", "black", []],
+
+    ["esp:0",     "adc1:SDA",   "blue",   []],
+    ["esp:1",     "adc1:SCL",   "purple", []],
+    ["esp:3V3.2", "adc1:VCC",   "red",    []],
+    ["esp:GND.2", "adc1:GND",   "black",  []],
+    ["esp:2",     "adc1:LOAD0", "orange", []],
+    ["esp:3",     "adc1:LOAD1", "orange", []],
+    ["esp:4",     "adc1:LOAD2", "orange", []],
+    ["esp:5",     "adc1:LOAD3", "orange", []],
+
+    ["esp:0",     "adc2:SDA",   "blue",   []],
+    ["esp:1",     "adc2:SCL",   "purple", []],
+    ["esp:3V3.1", "adc2:VCC",   "red",    []],
+    ["esp:GND.3", "adc2:GND",   "black",  []],
+    ["esp:6",     "adc2:LOAD0", "orange", []],
+    ["esp:7",     "adc2:LOAD1", "orange", []],
+    ["esp:8",     "adc2:LOAD2", "orange", []],
+    ["esp:9",     "adc2:LOAD3", "orange", []]
+  ]
+}

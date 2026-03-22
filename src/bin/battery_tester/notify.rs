@@ -8,18 +8,8 @@ use reqwless::client::HttpClient;
 use reqwless::request::{Method, RequestBuilder};
 use static_cell::StaticCell;
 
+use crate::channel::{Notification, NotificationKind};
 use crate::config::{BatteryResult, SlotType, NOTIFY_URL, PUSHOVER_TOKEN, PUSHOVER_USER};
-
-#[derive(Clone, Copy, Debug)]
-pub struct Notification {
-    pub slot: u8,
-    pub slot_type: SlotType,
-    pub capacity_mah: f32,
-    pub result: BatteryResult,
-    pub duration_s: u32,
-}
-
-pub type NotifyChannel = embassy_sync::channel::Channel<CriticalSectionRawMutex, Notification, 8>;
 
 #[embassy_executor::task]
 pub async fn notify_task(
@@ -121,25 +111,68 @@ fn format_message(notif: &Notification) -> Result<String<128>, NotifyError> {
             SlotType::AAA => " (AAA): ",
         },
     )?;
-    push_u32(&mut msg, notif.capacity_mah as u32)?;
-    push(&mut msg, " mAh - ")?;
-    push(
-        &mut msg,
-        match notif.result {
-            BatteryResult::Good => "Good",
-            BatteryResult::Weak => "Weak",
-            BatteryResult::Dead => "Dead",
-        },
-    )?;
-    push(&mut msg, "\nDischarge time: ")?;
-    let hours = notif.duration_s / 3600;
-    let minutes = (notif.duration_s % 3600) / 60;
-    if hours > 0 {
-        push_u32(&mut msg, hours)?;
-        push(&mut msg, "h ")?;
+
+    match &notif.kind {
+        NotificationKind::Complete {
+            capacity_mah,
+            result,
+            duration_s,
+        } => {
+            push_u32(&mut msg, *capacity_mah as u32)?;
+            push(&mut msg, " mAh - ")?;
+            push(
+                &mut msg,
+                match result {
+                    BatteryResult::Good => "Good",
+                    BatteryResult::Weak => "Weak",
+                    BatteryResult::Dead => "Dead",
+                },
+            )?;
+            push(&mut msg, "\nDischarge time: ")?;
+            let hours = duration_s / 3600;
+            let minutes = (duration_s % 3600) / 60;
+            if hours > 0 {
+                push_u32(&mut msg, hours)?;
+                push(&mut msg, "h ")?;
+            }
+            push_u32(&mut msg, minutes)?;
+            push(&mut msg, "m")?;
+        }
+        NotificationKind::WrongChemistry { ocv } => {
+            push(&mut msg, "wrong chemistry (")?;
+            push_u32(&mut msg, (*ocv * 100.0) as u32 / 100)?;
+            push(&mut msg, ".")?;
+            push_u32(&mut msg, ((*ocv * 100.0) as u32) % 100)?;
+            push(&mut msg, "V)\nAlkaline or non-NiMH detected")?;
+        }
+        NotificationKind::NotCharged { ocv } => {
+            push(&mut msg, "not charged (")?;
+            push_u32(&mut msg, (*ocv * 100.0) as u32 / 100)?;
+            push(&mut msg, ".")?;
+            push_u32(&mut msg, ((*ocv * 100.0) as u32) % 100)?;
+            push(&mut msg, "V)\nOCV too low to test")?;
+        }
+        NotificationKind::Timeout {
+            capacity_mah,
+            duration_s,
+        } => {
+            push(&mut msg, "timeout after ")?;
+            let hours = duration_s / 3600;
+            let minutes = (duration_s % 3600) / 60;
+            if hours > 0 {
+                push_u32(&mut msg, hours)?;
+                push(&mut msg, "h ")?;
+            }
+            push_u32(&mut msg, minutes)?;
+            push(&mut msg, "m\nCapacity so far: ")?;
+            push_u32(&mut msg, *capacity_mah as u32)?;
+            push(&mut msg, " mAh")?;
+        }
+        NotificationKind::AdcFault => {
+            push(&mut msg, "ADC communication failure")?;
+        }
     }
-    push_u32(&mut msg, minutes)?;
-    push(&mut msg, "m")?;
+
     Ok(msg)
 }
 

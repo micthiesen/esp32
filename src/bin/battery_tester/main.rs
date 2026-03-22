@@ -1,15 +1,18 @@
 #![no_std]
 #![no_main]
 
+esp_bootloader_esp_idf::esp_app_desc!();
+
 mod channel;
 mod config;
 mod led;
+#[cfg(feature = "wifi")]
 mod notify;
 mod serial;
 
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 use embassy_sync::channel::{Channel, Sender};
-use embassy_time::{Duration, Instant, Timer};
+use embassy_time::{Duration, Timer};
 use esp_backtrace as _;
 use esp_hal::gpio::{Level, Output, OutputConfig, Pin};
 use esp_hal::i2c::master::{Config as I2cConfig, I2c};
@@ -20,9 +23,10 @@ use esp_hal::uart::{Config as UartConfig, Uart};
 use firmware::adc::{BatteryAdc, SharedI2cBus};
 use static_cell::StaticCell;
 
-use crate::channel::{ChannelError, ChannelState, SharedState};
-use crate::config::NUM_CHANNELS;
-use crate::notify::{Notification, NotifyChannel};
+#[cfg(feature = "wifi")]
+use crate::channel::NotifyChannel;
+use crate::channel::{Action, ChannelCtx, ChannelState, Notification, SharedState};
+use crate::config::{SlotType, NUM_CHANNELS};
 use crate::serial::SerialCommand;
 
 type I2cBus = I2c<'static, esp_hal::Blocking>;
@@ -30,9 +34,6 @@ type I2cBus = I2c<'static, esp_hal::Blocking>;
 #[esp_rtos::main]
 async fn main(spawner: embassy_executor::Spawner) {
     esp_println::logger::init_logger_from_env();
-
-    // Initialize heap allocator (needed for WiFi firmware)
-    esp_alloc::heap_allocator!(size: 72 * 1024);
 
     let peripherals = esp_hal::init(esp_hal::Config::default());
 
@@ -43,15 +44,25 @@ async fn main(spawner: embassy_executor::Spawner) {
 
     log::info!("Battery capacity tester starting up");
 
-    // Initialize WiFi and notifications
-    let stack = firmware::wifi::init(&spawner, peripherals.WIFI).await;
+    // Initialize WiFi and notifications (only when wifi feature is enabled)
+    #[cfg(feature = "wifi")]
+    let notify_tx = {
+        esp_alloc::heap_allocator!(size: 72 * 1024);
 
-    static NOTIFY_CHAN: StaticCell<NotifyChannel> = StaticCell::new();
-    let notify_chan: &'static NotifyChannel = NOTIFY_CHAN.init(Channel::new());
+        let stack = firmware::wifi::init(&spawner, peripherals.WIFI).await;
 
-    spawner
-        .spawn(notify::notify_task(stack, notify_chan.receiver()))
-        .unwrap();
+        static NOTIFY_CHAN: StaticCell<NotifyChannel> = StaticCell::new();
+        let notify_chan: &'static NotifyChannel = NOTIFY_CHAN.init(Channel::new());
+
+        spawner
+            .spawn(notify::notify_task(stack, notify_chan.receiver()))
+            .unwrap();
+
+        Some(notify_chan.sender())
+    };
+
+    #[cfg(not(feature = "wifi"))]
+    let notify_tx: Option<Sender<'static, CriticalSectionRawMutex, Notification, 8>> = None;
 
     // Initialize I2C bus for ADS1115 communication
     let i2c = I2c::new(peripherals.I2C0, I2cConfig::default())
@@ -103,243 +114,87 @@ async fn main(spawner: embassy_executor::Spawner) {
         .spawn(serial::serial_task(uart, state, cmd_chan.sender()))
         .unwrap();
     spawner
-        .spawn(discharge_manager(
+        .spawn(channel_manager(
             mosfet_pins,
             i2c_bus,
             state,
             cmd_chan.receiver(),
-            notify_chan.sender(),
+            notify_tx,
         ))
         .unwrap();
 
-    log::info!("All tasks spawned. Send START to begin discharge test.");
+    log::info!("Battery capacity tester ready");
 }
 
 #[embassy_executor::task]
-async fn discharge_manager(
+async fn channel_manager(
     mut mosfets: [Output<'static>; 8],
     i2c_bus: &'static SharedI2cBus<I2cBus>,
     state: &'static SharedState,
     cmd_rx: embassy_sync::channel::Receiver<'static, CriticalSectionRawMutex, SerialCommand, 4>,
-    notify_tx: Sender<'static, CriticalSectionRawMutex, Notification, 8>,
+    notify_tx: Option<Sender<'static, CriticalSectionRawMutex, Notification, 8>>,
 ) {
     let mut battery_adc = BatteryAdc::new(i2c_bus);
+    let mut channels: [ChannelCtx; 8] = core::array::from_fn(|_| ChannelCtx::new());
 
     loop {
-        // Wait for START command
-        loop {
-            let cmd = cmd_rx.receive().await;
-            if matches!(cmd, SerialCommand::Start) {
-                break;
-            }
-        }
+        Timer::after(Duration::from_millis(config::SAMPLE_INTERVAL_MS)).await;
 
-        log::info!("Starting battery scan...");
-
-        {
-            let mut channels = state.lock().await;
-            for slot in 0..NUM_CHANNELS {
-                channels[slot] = ChannelState::Scanning;
-            }
-        }
-
-        Timer::after(Duration::from_millis(500)).await;
-
-        {
-            let mut channels = state.lock().await;
-            for slot in 0..NUM_CHANNELS {
-                match battery_adc.read_voltage(slot as u8) {
-                    Ok(voltage) => {
-                        channels[slot] = channel::classify_ocv(voltage);
-                        log::info!("Slot {}: {:.3}V -> {:?}", slot + 1, voltage, channels[slot]);
-                    }
-                    Err(_) => {
-                        channels[slot] = ChannelState::Error(ChannelError::NoBattery);
-                        log::warn!("Slot {}: ADC read error", slot + 1);
-                    }
-                }
-            }
-        }
-
-        let mut active = [false; NUM_CHANNELS];
-        let mut capacity_mah = [0.0f32; NUM_CHANNELS];
-        let mut min_voltage = [5.0f32; NUM_CHANNELS];
-        let mut below_cutoff_count = [0u8; NUM_CHANNELS];
-        let mut adc_error_count = [0u8; NUM_CHANNELS];
-        let mut start_time = [Instant::now(); NUM_CHANNELS];
-
-        {
-            let channels = state.lock().await;
-            let now = Instant::now();
-            for slot in 0..NUM_CHANNELS {
-                if matches!(channels[slot], ChannelState::Ready { .. }) {
-                    active[slot] = true;
-                    start_time[slot] = now;
-                    mosfets[slot].set_high();
-                    log::info!("Slot {}: discharge started", slot + 1);
-                }
-            }
-        }
-
-        let mut log_counter = 0u32;
-        let mut last_sample_time = Instant::now();
-        while active.iter().any(|&a| a) {
-            Timer::after(Duration::from_millis(config::SAMPLE_INTERVAL_MS)).await;
-
-            if let Ok(cmd) = cmd_rx.try_receive() {
-                if matches!(cmd, SerialCommand::Stop) {
-                    log::info!("STOP received, aborting all channels");
+        // Check for serial commands
+        if let Ok(cmd) = cmd_rx.try_receive() {
+            match cmd {
+                SerialCommand::Stop => {
+                    log::info!("STOP received, stopping all channels");
                     for slot in 0..NUM_CHANNELS {
-                        if active[slot] {
+                        let action = channels[slot].stop();
+                        if matches!(action, Action::DisableMosfet) {
                             mosfets[slot].set_low();
-                            active[slot] = false;
-                        }
-                    }
-                    let mut channels = state.lock().await;
-                    for slot in 0..NUM_CHANNELS {
-                        if matches!(channels[slot], ChannelState::Discharging { .. }) {
-                            channels[slot] = ChannelState::Idle;
-                        }
-                    }
-                    break;
-                }
-            }
-
-            let now = Instant::now();
-            let dt_s = (now - last_sample_time).as_millis() as f32 / 1000.0;
-            last_sample_time = now;
-
-            log_counter += 1;
-
-            for slot in 0..NUM_CHANNELS {
-                if !active[slot] {
-                    continue;
-                }
-
-                let elapsed_s = (Instant::now() - start_time[slot]).as_secs() as u32;
-
-                match battery_adc.read_voltage(slot as u8) {
-                    Ok(voltage) => {
-                        adc_error_count[slot] = 0;
-
-                        let current_a = voltage / config::DISCHARGE_RESISTOR_OHMS;
-                        let current_ma = current_a * 1000.0;
-
-                        capacity_mah[slot] += (current_a * dt_s) / 3.6;
-
-                        if voltage < min_voltage[slot] {
-                            min_voltage[slot] = voltage;
-                        }
-
-                        {
-                            let mut channels = state.lock().await;
-                            channels[slot] = ChannelState::Discharging {
-                                capacity_mah: capacity_mah[slot],
-                                voltage,
-                                current_ma,
-                                elapsed_s,
-                            };
-                        }
-
-                        if voltage < config::VOLTAGE_CUTOFF {
-                            below_cutoff_count[slot] += 1;
-                            if below_cutoff_count[slot] >= config::CUTOFF_CONSECUTIVE_READINGS {
-                                mosfets[slot].set_low();
-                                active[slot] = false;
-
-                                let slot_type = config::SlotType::from_slot(slot);
-                                let result =
-                                    config::BatteryResult::classify(slot_type, capacity_mah[slot]);
-
-                                let mut channels = state.lock().await;
-                                channels[slot] = ChannelState::Complete {
-                                    capacity_mah: capacity_mah[slot],
-                                    min_voltage: min_voltage[slot],
-                                    duration_s: elapsed_s,
-                                };
-
-                                log::info!(
-                                    "Slot {}: COMPLETE - {:.0} mAh, {:?}, min {:.3}V, {}s",
-                                    slot + 1,
-                                    capacity_mah[slot],
-                                    result,
-                                    min_voltage[slot],
-                                    elapsed_s
-                                );
-
-                                let _ = notify_tx.try_send(Notification {
-                                    slot: (slot + 1) as u8,
-                                    slot_type,
-                                    capacity_mah: capacity_mah[slot],
-                                    result,
-                                    duration_s: elapsed_s,
-                                });
-                            }
-                        } else {
-                            below_cutoff_count[slot] = 0;
-                        }
-
-                        if log_counter % config::LOG_INTERVAL_S == 0 {
-                            log::info!(
-                                "Slot {}: {:.3}V {:.0}mA {:.0}mAh {}s",
-                                slot + 1,
-                                voltage,
-                                current_ma,
-                                capacity_mah[slot],
-                                elapsed_s
-                            );
-                        }
-                    }
-                    Err(_) => {
-                        adc_error_count[slot] += 1;
-                        log::warn!(
-                            "Slot {}: ADC read error during discharge ({}/5)",
-                            slot + 1,
-                            adc_error_count[slot]
-                        );
-
-                        if adc_error_count[slot] >= 5 {
-                            mosfets[slot].set_low();
-                            active[slot] = false;
-                            log::error!(
-                                "Slot {}: too many consecutive ADC errors, stopping discharge",
-                                slot + 1
-                            );
-
-                            let mut channels = state.lock().await;
-                            channels[slot] = ChannelState::Error(ChannelError::NoBattery);
                         }
                     }
                 }
-            }
-        }
-
-        log::info!("=== Discharge Complete ===");
-        let channels = state.lock().await;
-        for slot in 0..NUM_CHANNELS {
-            match channels[slot] {
-                ChannelState::Complete {
-                    capacity_mah,
-                    min_voltage,
-                    duration_s,
-                } => {
-                    let slot_type = config::SlotType::from_slot(slot);
-                    let result = config::BatteryResult::classify(slot_type, capacity_mah);
-                    log::info!(
-                        "Slot {} ({:?}): {:.0} mAh - {:?} (min {:.3}V, {}s)",
-                        slot + 1,
-                        slot_type,
-                        capacity_mah,
-                        result,
-                        min_voltage,
-                        duration_s
-                    );
-                }
-                ChannelState::Error(e) => {
-                    log::info!("Slot {}: {:?}", slot + 1, e);
+                SerialCommand::StopSlot(n) => {
+                    if n < NUM_CHANNELS {
+                        log::info!("STOP received for slot {}", n + 1);
+                        let action = channels[n].stop();
+                        if matches!(action, Action::DisableMosfet) {
+                            mosfets[n].set_low();
+                        }
+                    }
                 }
                 _ => {}
             }
+        }
+
+        // Read all 8 ADC channels and update state machines
+        for slot in 0..NUM_CHANNELS {
+            let voltage = battery_adc.read_voltage(slot as u8).map_err(|_| ());
+            let action = channels[slot].update(voltage, slot);
+
+            match action {
+                Action::EnableMosfet => {
+                    mosfets[slot].set_high();
+                }
+                Action::DisableMosfet => {
+                    mosfets[slot].set_low();
+                }
+                Action::Terminal(kind) => {
+                    mosfets[slot].set_low();
+                    if let Some(ref tx) = notify_tx {
+                        let _ = tx.try_send(Notification {
+                            slot: (slot + 1) as u8,
+                            slot_type: SlotType::from_slot(slot),
+                            kind,
+                        });
+                    }
+                }
+                Action::None => {}
+            }
+        }
+
+        // Update shared state (single lock for all 8 slots)
+        let mut shared = state.lock().await;
+        for slot in 0..NUM_CHANNELS {
+            shared[slot] = channels[slot].state();
         }
     }
 }

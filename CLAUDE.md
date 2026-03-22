@@ -27,6 +27,15 @@ espflash board-info                        # Check connected device
 
 **After making changes, always run `cargo fmt && cargo build` to verify.**
 
+```bash
+# Wokwi simulation (no hardware needed, no WiFi)
+cargo build --bin battery-tester --no-default-features --features esp32c3
+wokwi-cli chip compile chips/ads1115.chip.c -o chips/ads1115.chip.wasm
+wokwi-cli --scenario wokwi-test.yaml .
+```
+
+Wokwi simulates the full firmware with custom ADS1115 chips that decay voltage over ~60s. Build without `wifi` feature since WiFi doesn't work in simulation. Recompile the chip WASM after editing `chips/ads1115.chip.c`. Zed tasks are available for all Wokwi workflows.
+
 ## Setup
 
 1. Copy config: `cp .cargo/config.toml.example .cargo/config.toml`

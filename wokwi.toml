@@ -1,0 +1,8 @@
+[wokwi]
+version = 1
+elf = "target/riscv32imc-unknown-none-elf/debug/battery-tester"
+firmware = "target/riscv32imc-unknown-none-elf/debug/battery-tester"
+
+[[chip]]
+name = "ads1115"
+binary = "chips/ads1115.chip.wasm"

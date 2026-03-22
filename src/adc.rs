@@ -52,11 +52,21 @@ impl<I2C: embedded_hal::i2c::I2c + 'static> BatteryAdc<I2C> {
         let mut adc2 = Ads1x1x::new_ads1115(i2c2, TargetAddr::Vdd);
 
         // Configure PGA to +/-4.096V for both devices
-        let _ = adc1.set_full_scale_range(FullScaleRange::Within4_096V);
-        let _ = adc1.set_data_rate(DataRate16Bit::Sps128);
+        if adc1
+            .set_full_scale_range(FullScaleRange::Within4_096V)
+            .is_err()
+            || adc1.set_data_rate(DataRate16Bit::Sps128).is_err()
+        {
+            log::warn!("ADC1 (0x48): configuration failed, using defaults");
+        }
 
-        let _ = adc2.set_full_scale_range(FullScaleRange::Within4_096V);
-        let _ = adc2.set_data_rate(DataRate16Bit::Sps128);
+        if adc2
+            .set_full_scale_range(FullScaleRange::Within4_096V)
+            .is_err()
+            || adc2.set_data_rate(DataRate16Bit::Sps128).is_err()
+        {
+            log::warn!("ADC2 (0x49): configuration failed, using defaults");
+        }
 
         Self { adc1, adc2 }
     }

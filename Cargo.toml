@@ -34,6 +34,7 @@ default = ["esp32c3", "wifi"]
 esp32c3 = [
     "esp-hal/esp32c3",
     "esp-println/esp32c3",
+    "esp-println/uart",
     "esp-backtrace/esp32c3",
     "esp-rtos/esp32c3",
     "esp-hal-smartled/esp32c3",
@@ -45,7 +46,7 @@ wifi = ["dep:esp-radio", "dep:embassy-net", "dep:reqwless", "dep:esp-alloc", "es
 [dependencies]
 # Core logging
 log = { version = "0.4", default-features = false }
-esp-println = { version = "0.16", default-features = false, features = ["uart", "log-04"] }
+esp-println = { version = "0.16", default-features = false, features = ["log-04"] }
 esp-backtrace = { version = "0.18", default-features = false, features = ["panic-handler", "println"] }
 
 # ESP HAL + RTOS (Embassy integration)
