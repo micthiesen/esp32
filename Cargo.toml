@@ -1,55 +1,73 @@
 [package]
-name = "esp32"
+name = "battery-tester"
 version = "0.1.0"
-authors = ["Michael Thiesen <michael@understorytech.com>"]
 edition = "2021"
 resolver = "2"
-rust-version = "1.77"
 
 [[bin]]
-name = "esp32"
-harness = false # do not use the built in cargo test harness -> resolve rust-analyzer errors
+name = "battery-tester"
+harness = false
 
 [profile.release]
 opt-level = "s"
 
 [profile.dev]
-debug = true    # Symbols are nice and they don't increase the size on Flash
+debug = true
 opt-level = "z"
 
-[features]
-default = []
+# WiFi firmware requires optimization to function correctly
+[profile.dev.package.esp-radio]
+opt-level = 3
 
-experimental = ["esp-idf-svc/experimental"]
+[features]
+default = ["esp32c3"]
+esp32c3 = [
+    "esp-hal/esp32c3",
+    "esp-println/esp32c3",
+    "esp-backtrace/esp32c3",
+    "esp-rtos/esp32c3",
+    "esp-hal-smartled/esp32c3",
+    "esp-bootloader-esp-idf/esp32c3",
+    "esp-radio/esp32c3",
+]
 
 [dependencies]
-log = "0.4"
-esp-idf-svc = { version = "0.51", features = ["experimental", "alloc"] }
-anyhow = "1"
+# Core logging
+log = { version = "0.4", default-features = false }
+esp-println = { version = "0.16", default-features = false, features = ["uart", "log-04"] }
+esp-backtrace = { version = "0.18", default-features = false, features = ["panic-handler", "println"] }
 
-# Configuration parsing
-toml = { version = "0.8", default-features = false, features = ["parse"] }
-serde = { version = "1.0", default-features = false, features = ["derive"] }
+# ESP HAL + RTOS (Embassy integration)
+esp-hal = { version = "1.0", default-features = false, features = ["unstable", "rt"] }
+esp-rtos = { version = "0.2", default-features = false, features = ["embassy", "esp-radio", "esp-alloc"] }
+esp-bootloader-esp-idf = { version = "0.4", default-features = false }
 
-# Matter dependencies (to be added when dependency conflicts are resolved)
-# esp-idf-matter = { git = "https://github.com/ivmarkov/esp-idf-matter" }
+# Embassy async runtime
+embassy-executor = { version = "0.9", default-features = false }
+embassy-time = { version = "0.5", default-features = false }
+embassy-sync = { version = "0.7", default-features = false }
 
-# --- Optional Embassy Integration ---
-# esp-idf-svc = { version = "0.51", features = ["critical-section", "embassy-time-driver", "embassy-sync"] }
+# ADS1115 ADC driver
+ads1x1x = { version = "0.3", default-features = false }
 
-# If you enable embassy-time-driver, you MUST also add one of:
+# LED driver (SK6812/WS2812B via RMT)
+esp-hal-smartled = { version = "0.17", default-features = false }
+smart-leds = { version = "0.4", default-features = false }
 
-# a) Standalone Embassy libs ( embassy-time, embassy-sync etc) with a foreign async runtime:
-# embassy-time = { version = "0.4.0", features = ["generic-queue-8"] } # NOTE: any generic-queue variant will work
+# WiFi and networking (for Pushover notifications)
+esp-radio = { version = "0.17", default-features = false, features = ["wifi"] }
+embassy-net = { version = "0.9", default-features = false, features = ["tcp", "udp", "dns", "dhcpv4"] }
+reqwless = { version = "0.14", default-features = false, features = ["log"] }
 
-# b) With embassy-executor:
-# embassy-executor = { version = "0.7", features = ["executor-thread", "arch-std"] }
+# no_std utilities
+nb = "1.1"
+heapless = { version = "0.8", default-features = false }
+critical-section = "1.1"
+static_cell = "2"
+portable-atomic = { version = "1.6", default-features = false }
+embedded-hal = { version = "1.0", default-features = false }
+embedded-hal-bus = { version = "0.3", default-features = false }
 
-# NOTE: if you use embassy-time with embassy-executor you don't need the generic-queue-8 feature
+# Memory allocator (needed for WiFi)
+esp-alloc = { version = "0.9", default-features = false }
 
-# --- Temporary workaround for embassy-executor < 0.8 ---
-# esp-idf-svc = { version = "0.51", features = ["embassy-time-driver", "embassy-sync"] }
-# critical-section = { version = "1.1", features = ["std"], default-features = false }
-
-[build-dependencies]
-embuild = "0.33"

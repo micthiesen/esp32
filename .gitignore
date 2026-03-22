@@ -1,5 +1,5 @@
 /.vscode
 /.embuild
 /target
-/Cargo.lock
 /config.toml
+/.cargo/config.toml

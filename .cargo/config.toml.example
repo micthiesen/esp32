@@ -1,0 +1,27 @@
+[target.riscv32imc-unknown-none-elf]
+runner = "espflash flash --monitor"
+rustflags = ["-C", "link-arg=-Tlinkall.x"]
+
+[build]
+target = "riscv32imc-unknown-none-elf"
+
+[unstable]
+build-std = ["core", "alloc"]
+
+[env]
+ESP_LOG = "INFO"
+
+# WiFi credentials
+WIFI_SSID = "your-wifi-ssid"
+WIFI_PASSWORD = "your-wifi-password"
+
+# Pushover notifications (https://pushover.net)
+PUSHOVER_TOKEN = "your-app-token"
+PUSHOVER_USER = "your-user-key"
+
+# Notification endpoint URL
+# Use a local HTTP relay until TLS dep is fixed:
+#   NOTIFY_URL = "http://192.168.1.100:8080/pushover"
+# Once reqwless embedded-tls works, switch to direct HTTPS:
+#   NOTIFY_URL = "https://api.pushover.net/1/messages.json"
+NOTIFY_URL = "http://192.168.1.100:8080/pushover"

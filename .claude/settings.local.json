@@ -51,7 +51,8 @@
       "Bash(espup install:*)",
       "Bash(rustup target:*)",
       "Bash(espflash:*)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:docs.rs)"
     ],
     "deny": [],
     "ask": []
