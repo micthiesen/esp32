@@ -21,16 +21,16 @@ Set up 5V and GND rails on the protoboard. ESP32 3.3V LDO provides the 3.3V rail
 
 | ✓ | Device | Pin | Wire | Pin | Device | Note |
 |---|--------|-----|------|-----|--------|------|
-| | protoboard | 3.3V rail | | VDD | ADC1 (ADS1115) | |
-| | protoboard | GND rail | | GND | ADC1 (ADS1115) | |
-| | protoboard | GND rail | | ADDR | ADC1 (ADS1115) | sets address 0x48 |
-| | protoboard | 3.3V rail | | VDD | ADC2 (ADS1115) | |
-| | protoboard | GND rail | | GND | ADC2 (ADS1115) | |
-| | protoboard | 3.3V rail | | ADDR | ADC2 (ADS1115) | sets address 0x49 |
-| | ESP32 | GPIO0 | | SDA | ADC1 (ADS1115) | |
-| | ESP32 | GPIO0 | | SDA | ADC2 (ADS1115) | same node as above |
-| | ESP32 | GPIO1 | | SCL | ADC1 (ADS1115) | |
-| | ESP32 | GPIO1 | | SCL | ADC2 (ADS1115) | same node as above |
+| | protoboard | 3.3V rail | | VDD | ADC1 | |
+| | protoboard | GND rail | | GND | ADC1 | |
+| | protoboard | GND rail | | ADDR | ADC1 | sets address 0x48 |
+| | protoboard | 3.3V rail | | VDD | ADC2 | |
+| | protoboard | GND rail | | GND | ADC2 | |
+| | protoboard | 3.3V rail | | ADDR | ADC2 | sets address 0x49 |
+| | ESP32 | GPIO0 | | SDA | ADC1 | |
+| | ESP32 | GPIO0 | | SDA | ADC2 | same node as above |
+| | ESP32 | GPIO1 | | SCL | ADC1 | |
+| | ESP32 | GPIO1 | | SCL | ADC2 | same node as above |
 | | protoboard | 3.3V rail | 4.7kΩ | SDA line | protoboard | I2C pull-up |
 | | protoboard | 3.3V rail | 4.7kΩ | SCL line | protoboard | I2C pull-up |
 
@@ -50,7 +50,7 @@ IRLZ44N pinout (flat side facing you, legs down): **Gate | Drain | Source**
 | | Q1 (IRLZ44N) | source | | GND rail | protoboard | |
 | | Batt 1 holder | + | | leg A | R1 (2.2Ω 5W) | |
 | | R1 (2.2Ω 5W) | leg B | | drain | Q1 (IRLZ44N) | |
-| | Batt 1 holder | + | | A0 | ADC1 (ADS1115) | tee off same node as R1 leg A |
+| | Batt 1 holder | + | | A0 | ADC1 | tee off same node as R1 leg A |
 | | Batt 1 holder | - | | GND rail | protoboard | |
 
 ### Slot 2 — AA
@@ -61,7 +61,7 @@ IRLZ44N pinout (flat side facing you, legs down): **Gate | Drain | Source**
 | | Q2 (IRLZ44N) | source | | GND rail | protoboard | |
 | | Batt 2 holder | + | | leg A | R2 (2.2Ω 5W) | |
 | | R2 (2.2Ω 5W) | leg B | | drain | Q2 (IRLZ44N) | |
-| | Batt 2 holder | + | | A1 | ADC1 (ADS1115) | tee off same node as R2 leg A |
+| | Batt 2 holder | + | | A1 | ADC1 | tee off same node as R2 leg A |
 | | Batt 2 holder | - | | GND rail | protoboard | |
 
 ### Slot 3 — AA
@@ -72,7 +72,7 @@ IRLZ44N pinout (flat side facing you, legs down): **Gate | Drain | Source**
 | | Q3 (IRLZ44N) | source | | GND rail | protoboard | |
 | | Batt 3 holder | + | | leg A | R3 (2.2Ω 5W) | |
 | | R3 (2.2Ω 5W) | leg B | | drain | Q3 (IRLZ44N) | |
-| | Batt 3 holder | + | | A2 | ADC1 (ADS1115) | tee off same node as R3 leg A |
+| | Batt 3 holder | + | | A2 | ADC1 | tee off same node as R3 leg A |
 | | Batt 3 holder | - | | GND rail | protoboard | |
 
 ### Slot 4 — AA
@@ -83,7 +83,7 @@ IRLZ44N pinout (flat side facing you, legs down): **Gate | Drain | Source**
 | | Q4 (IRLZ44N) | source | | GND rail | protoboard | |
 | | Batt 4 holder | + | | leg A | R4 (2.2Ω 5W) | |
 | | R4 (2.2Ω 5W) | leg B | | drain | Q4 (IRLZ44N) | |
-| | Batt 4 holder | + | | A3 | ADC1 (ADS1115) | tee off same node as R4 leg A |
+| | Batt 4 holder | + | | A3 | ADC1 | tee off same node as R4 leg A |
 | | Batt 4 holder | - | | GND rail | protoboard | |
 
 ### Slot 5 — AAA
@@ -94,7 +94,7 @@ IRLZ44N pinout (flat side facing you, legs down): **Gate | Drain | Source**
 | | Q5 (IRLZ44N) | source | | GND rail | protoboard | |
 | | Batt 5 holder | + | | leg A | R5 (2.2Ω 5W) | |
 | | R5 (2.2Ω 5W) | leg B | | drain | Q5 (IRLZ44N) | |
-| | Batt 5 holder | + | | A0 | ADC2 (ADS1115) | tee off same node as R5 leg A |
+| | Batt 5 holder | + | | A0 | ADC2 | tee off same node as R5 leg A |
 | | Batt 5 holder | - | | GND rail | protoboard | |
 
 ### Slot 6 — AAA
@@ -105,7 +105,7 @@ IRLZ44N pinout (flat side facing you, legs down): **Gate | Drain | Source**
 | | Q6 (IRLZ44N) | source | | GND rail | protoboard | |
 | | Batt 6 holder | + | | leg A | R6 (2.2Ω 5W) | |
 | | R6 (2.2Ω 5W) | leg B | | drain | Q6 (IRLZ44N) | |
-| | Batt 6 holder | + | | A1 | ADC2 (ADS1115) | tee off same node as R6 leg A |
+| | Batt 6 holder | + | | A1 | ADC2 | tee off same node as R6 leg A |
 | | Batt 6 holder | - | | GND rail | protoboard | |
 
 ### Slot 7 — AAA
@@ -116,7 +116,7 @@ IRLZ44N pinout (flat side facing you, legs down): **Gate | Drain | Source**
 | | Q7 (IRLZ44N) | source | | GND rail | protoboard | |
 | | Batt 7 holder | + | | leg A | R7 (2.2Ω 5W) | |
 | | R7 (2.2Ω 5W) | leg B | | drain | Q7 (IRLZ44N) | |
-| | Batt 7 holder | + | | A2 | ADC2 (ADS1115) | tee off same node as R7 leg A |
+| | Batt 7 holder | + | | A2 | ADC2 | tee off same node as R7 leg A |
 | | Batt 7 holder | - | | GND rail | protoboard | |
 
 ### Slot 8 — AAA
@@ -127,7 +127,7 @@ IRLZ44N pinout (flat side facing you, legs down): **Gate | Drain | Source**
 | | Q8 (IRLZ44N) | source | | GND rail | protoboard | |
 | | Batt 8 holder | + | | leg A | R8 (2.2Ω 5W) | |
 | | R8 (2.2Ω 5W) | leg B | | drain | Q8 (IRLZ44N) | |
-| | Batt 8 holder | + | | A3 | ADC2 (ADS1115) | tee off same node as R8 leg A |
+| | Batt 8 holder | + | | A3 | ADC2 | tee off same node as R8 leg A |
 | | Batt 8 holder | - | | GND rail | protoboard | |
 
 **Test per slot:** Insert a battery, run `STATUS`. Should read ~1.2-1.4V on that slot, ~0V on others.
