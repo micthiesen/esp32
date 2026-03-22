@@ -21,7 +21,7 @@ fn color_for_state(state: &ChannelState, frame: u32) -> RGB8 {
         ChannelState::Idle => RGB8 { r: 0, g: 0, b: 0 },
         ChannelState::Scanning => dim(255, 80, 0),
         ChannelState::Discharging { .. } => {
-            if (frame / 5) % 2 == 0 {
+            if (frame / 5).is_multiple_of(2) {
                 dim(0, 0, 255)
             } else {
                 RGB8 { r: 0, g: 0, b: 0 }
@@ -31,14 +31,14 @@ fn color_for_state(state: &ChannelState, frame: u32) -> RGB8 {
         ChannelState::Complete { .. } => unreachable!(),
         ChannelState::Error(err) => match err {
             ChannelError::WrongChemistry => {
-                if (frame / 1) % 2 == 0 {
+                if frame.is_multiple_of(2) {
                     dim(255, 0, 0)
                 } else {
                     RGB8 { r: 0, g: 0, b: 0 }
                 }
             }
             ChannelError::NotCharged => {
-                if (frame / 5) % 2 == 0 {
+                if (frame / 5).is_multiple_of(2) {
                     dim(255, 0, 0)
                 } else {
                     RGB8 { r: 0, g: 0, b: 0 }
@@ -57,7 +57,7 @@ fn color_for_complete(slot: usize, capacity_mah: f32, frame: u32) -> RGB8 {
     match result {
         BatteryResult::Good => dim(0, 255, 0),
         BatteryResult::Weak => {
-            if (frame / 5) % 2 == 0 {
+            if (frame / 5).is_multiple_of(2) {
                 dim(0, 255, 0)
             } else {
                 RGB8 { r: 0, g: 0, b: 0 }

@@ -1,5 +1,0 @@
-{
-  "name": "ADS1115",
-  "author": "battery-tester",
-  "pins": ["SDA", "SCL", "VCC", "GND", "LOAD0", "LOAD1", "LOAD2", "LOAD3"]
-}

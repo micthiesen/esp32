@@ -6,7 +6,6 @@ esp_bootloader_esp_idf::esp_app_desc!();
 mod channel;
 mod config;
 mod led;
-#[cfg(feature = "wifi")]
 mod notify;
 mod serial;
 
@@ -23,9 +22,7 @@ use esp_hal::usb_serial_jtag::UsbSerialJtag;
 use firmware::adc::{BatteryAdc, SharedI2cBus};
 use static_cell::StaticCell;
 
-#[cfg(feature = "wifi")]
-use crate::channel::NotifyChannel;
-use crate::channel::{Action, ChannelCtx, ChannelState, Notification, SharedState};
+use crate::channel::{Action, ChannelCtx, ChannelState, Notification, NotifyChannel, SharedState};
 use crate::config::{SlotType, NUM_CHANNELS};
 use crate::serial::SerialCommand;
 
@@ -44,25 +41,19 @@ async fn main(spawner: embassy_executor::Spawner) {
 
     log::info!("Battery capacity tester starting up");
 
-    // Initialize WiFi and notifications (only when wifi feature is enabled)
-    #[cfg(feature = "wifi")]
-    let notify_tx = {
-        esp_alloc::heap_allocator!(size: 72 * 1024);
+    // Initialize WiFi and notifications
+    esp_alloc::heap_allocator!(size: 72 * 1024);
 
-        let stack = firmware::wifi::init(&spawner, peripherals.WIFI).await;
+    let stack = firmware::wifi::init(&spawner, peripherals.WIFI).await;
 
-        static NOTIFY_CHAN: StaticCell<NotifyChannel> = StaticCell::new();
-        let notify_chan: &'static NotifyChannel = NOTIFY_CHAN.init(Channel::new());
+    static NOTIFY_CHAN: StaticCell<NotifyChannel> = StaticCell::new();
+    let notify_chan: &'static NotifyChannel = NOTIFY_CHAN.init(Channel::new());
 
-        spawner
-            .spawn(notify::notify_task(stack, notify_chan.receiver()))
-            .unwrap();
+    spawner
+        .spawn(notify::notify_task(stack, notify_chan.receiver()))
+        .unwrap();
 
-        Some(notify_chan.sender())
-    };
-
-    #[cfg(not(feature = "wifi"))]
-    let notify_tx: Option<Sender<'static, CriticalSectionRawMutex, Notification, 8>> = None;
+    let notify_tx = Some(notify_chan.sender());
 
     // Initialize I2C bus for ADS1115 communication
     let i2c = I2c::new(peripherals.I2C0, I2cConfig::default())

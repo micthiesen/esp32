@@ -25,8 +25,8 @@ pub async fn init(
     // Configure station mode
     let client_config = ModeConfig::Client(
         ClientConfig::default()
-            .with_ssid(ssid.try_into().unwrap())
-            .with_password(password.try_into().unwrap()),
+            .with_ssid(ssid.into())
+            .with_password(password.into()),
     );
     wifi_controller.set_config(&client_config).unwrap();
 

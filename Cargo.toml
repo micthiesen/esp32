@@ -30,7 +30,7 @@ opt-level = "z"
 opt-level = 3
 
 [features]
-default = ["esp32c3", "wifi"]
+default = ["esp32c3"]
 esp32c3 = [
     "esp-hal/esp32c3",
     "esp-println/esp32c3",
@@ -39,9 +39,9 @@ esp32c3 = [
     "esp-rtos/esp32c3",
     "esp-hal-smartled/esp32c3",
     "esp-bootloader-esp-idf/esp32c3",
-    "esp-radio?/esp32c3",
+    "esp-radio/esp32c3",
+    "esp-rtos/esp-radio",
 ]
-wifi = ["dep:esp-radio", "dep:embassy-net", "dep:reqwless", "dep:esp-alloc", "esp-rtos/esp-radio"]
 
 [dependencies]
 # Core logging
@@ -66,11 +66,11 @@ ads1x1x = { version = "0.3", default-features = false }
 esp-hal-smartled = { version = "0.17", default-features = false }
 smart-leds = { version = "0.4", default-features = false }
 
-# WiFi and networking (behind "wifi" feature)
-esp-radio = { version = "0.17", default-features = false, features = ["wifi"], optional = true }
-embassy-net = { version = "0.9", default-features = false, features = ["tcp", "udp", "dns", "dhcpv4"], optional = true }
-reqwless = { version = "0.14", default-features = false, features = ["log"], optional = true }
-esp-alloc = { version = "0.9", default-features = false, optional = true }
+# WiFi and networking
+esp-radio = { version = "0.17", default-features = false, features = ["wifi"] }
+embassy-net = { version = "0.9", default-features = false, features = ["tcp", "udp", "dns", "dhcpv4"] }
+reqwless = { version = "0.14", default-features = false, features = ["log"] }
+esp-alloc = { version = "0.9", default-features = false }
 
 # no_std utilities
 nb = "1.1"

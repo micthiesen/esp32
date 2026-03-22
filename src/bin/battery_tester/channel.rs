@@ -61,7 +61,6 @@ pub enum Action {
 // ---------------------------------------------------------------------------
 
 #[derive(Clone, Copy, Debug)]
-#[cfg_attr(not(feature = "wifi"), allow(dead_code))]
 pub enum NotificationKind {
     Complete {
         capacity_mah: f32,
@@ -82,14 +81,12 @@ pub enum NotificationKind {
 }
 
 #[derive(Clone, Copy, Debug)]
-#[cfg_attr(not(feature = "wifi"), allow(dead_code))]
 pub struct Notification {
     pub slot: u8,
     pub slot_type: SlotType,
     pub kind: NotificationKind,
 }
 
-#[cfg(feature = "wifi")]
 pub type NotifyChannel = embassy_sync::channel::Channel<CriticalSectionRawMutex, Notification, 8>;
 
 // ---------------------------------------------------------------------------
@@ -134,11 +131,10 @@ impl ChannelCtx {
         matches!(self.state, ChannelState::Discharging { .. })
     }
 
-    /// Returns true if this channel is in a terminal state (Complete or Error).
-
     /// Returns true every LOG_INTERVAL samples during discharge.
     pub fn should_log(&self) -> bool {
-        self.sample_count > 0 && self.sample_count % config::LOG_INTERVAL_SAMPLES == 0
+        self.sample_count
+            .is_multiple_of(config::LOG_INTERVAL_SAMPLES)
     }
 
     /// Drive the state machine with a new voltage reading (or ADC error).

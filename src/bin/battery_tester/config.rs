@@ -25,16 +25,14 @@ pub const AAA_WEAK_MAH: f32 = 400.0;
 pub const NUM_CHANNELS: usize = 8;
 
 // Pushover notification (set via env vars in .cargo/config.toml)
-#[cfg(feature = "wifi")]
 pub const PUSHOVER_TOKEN: &str = env!("PUSHOVER_TOKEN");
-#[cfg(feature = "wifi")]
 pub const PUSHOVER_USER: &str = env!("PUSHOVER_USER");
-#[cfg(feature = "wifi")]
 pub const NOTIFY_URL: &str = env!("NOTIFY_URL");
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SlotType {
     AA,
+    #[allow(clippy::upper_case_acronyms)] // AAA is a battery size, not an acronym
     AAA,
 }
 

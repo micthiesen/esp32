@@ -27,15 +27,6 @@ espflash board-info                        # Check connected device
 
 **After making changes, always run `cargo fmt && cargo build` to verify.**
 
-```bash
-# Wokwi simulation (no hardware needed, no WiFi)
-cargo build --bin battery-tester --no-default-features --features esp32c3
-wokwi-cli chip compile chips/ads1115.chip.c -o chips/ads1115.chip.wasm
-wokwi-cli --scenario wokwi-test.yaml .
-```
-
-Wokwi simulates the full firmware with custom ADS1115 chips that decay voltage over ~60s. Build without `wifi` feature since WiFi doesn't work in simulation. Recompile the chip WASM after editing `chips/ads1115.chip.c`. Zed tasks are available for all Wokwi workflows.
-
 ## Setup
 
 1. Copy config: `cp .cargo/config.toml.example .cargo/config.toml`
@@ -50,7 +41,7 @@ Secrets are compiled in via `env!()` macros. The build fails with a clear error 
 src/
   lib.rs                          # Shared library crate
   adc.rs                          #   ADS1115 8-channel ADC driver (I2C, shared bus)
-  wifi.rs                         #   WiFi station init + DHCP (behind "wifi" feature)
+  wifi.rs                         #   WiFi station init + DHCP
   bin/
     battery_tester/               # Main application binary
       main.rs                     #   Entry point, Embassy setup, discharge manager task
@@ -66,7 +57,6 @@ src/
 ## Key Patterns
 
 - **Multi-binary with shared lib**: `src/lib.rs` exports reusable modules (`adc`, `wifi`). Each `src/bin/*/main.rs` is a standalone firmware image.
-- **Feature-gated WiFi**: The `wifi` feature (default on) pulls in `esp-radio`, `embassy-net`, `reqwless`, `esp-alloc`. Disable with `--no-default-features --features esp32c3` for lightweight binaries.
 - **Embassy async tasks**: Each module runs as an `#[embassy_executor::task]` for cooperative multitasking.
 - **Shared state via mutex**: Battery channel state shared between tasks using `embassy_sync::mutex::Mutex<CriticalSectionRawMutex, _>`.
 - **Compile-time secrets**: WiFi creds and API keys via `env!()` macros, sourced from `.cargo/config.toml` (gitignored). Template in `.cargo/config.toml.example`.

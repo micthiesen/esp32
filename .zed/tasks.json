@@ -32,30 +32,6 @@
 		"tags": ["flash", "monitor", "rust", "esp32"]
 	},
 	{
-		"label": "Wokwi: Build",
-		"command": "cargo build --bin battery-tester --no-default-features --features esp32c3 && wokwi-cli chip compile chips/ads1115.chip.c -o chips/ads1115.chip.wasm",
-		"cwd": "$ZED_WORKTREE_ROOT",
-		"reveal": "always",
-		"hide": "on_success",
-		"tags": ["build", "wokwi", "rust", "esp32"]
-	},
-	{
-		"label": "Wokwi: Simulate",
-		"command": "cargo build --bin battery-tester --no-default-features --features esp32c3 && wokwi-cli chip compile chips/ads1115.chip.c -o chips/ads1115.chip.wasm && wokwi-cli --timeout 300000 --interactive .",
-		"cwd": "$ZED_WORKTREE_ROOT",
-		"reveal": "always",
-		"hide": "never",
-		"tags": ["simulate", "wokwi", "rust", "esp32"]
-	},
-	{
-		"label": "Wokwi: Test Scenario",
-		"command": "cargo build --bin battery-tester --no-default-features --features esp32c3 && wokwi-cli chip compile chips/ads1115.chip.c -o chips/ads1115.chip.wasm && wokwi-cli --timeout 300000 --scenario wokwi-test.yaml .",
-		"cwd": "$ZED_WORKTREE_ROOT",
-		"reveal": "always",
-		"hide": "never",
-		"tags": ["test", "wokwi", "rust", "esp32"]
-	},
-	{
 		"label": "Build All",
 		"command": "cargo build",
 		"cwd": "$ZED_WORKTREE_ROOT",

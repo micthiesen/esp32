@@ -127,39 +127,36 @@ pub async fn serial_task(
         // Yield to let other tasks run
         Timer::after(Duration::from_millis(10)).await;
 
-        match usb_serial.read_byte() {
-            Ok(b) => {
-                if b == b'\n' || b == b'\r' {
-                    if !line_buf.is_empty() {
-                        if let Some(cmd) = parse_command(line_buf.as_str()) {
-                            match cmd {
-                                SerialCommand::Status => {
-                                    let states = state.lock().await;
-                                    let snapshot = *states;
-                                    drop(states);
-                                    print_status(&snapshot);
-                                }
-                                SerialCommand::Stop => {
-                                    println!(">> Stopping...");
-                                    let _ = command_tx.try_send(cmd);
-                                }
-                                SerialCommand::StopSlot(slot) => {
-                                    println!(">> Stopping slot {}...", slot + 1);
-                                    let _ = command_tx.try_send(cmd);
-                                }
+        if let Ok(b) = usb_serial.read_byte() {
+            if b == b'\n' || b == b'\r' {
+                if !line_buf.is_empty() {
+                    if let Some(cmd) = parse_command(line_buf.as_str()) {
+                        match cmd {
+                            SerialCommand::Status => {
+                                let states = state.lock().await;
+                                let snapshot = *states;
+                                drop(states);
+                                print_status(&snapshot);
                             }
-                        } else {
-                            println!("Unknown command: {}", line_buf.as_str());
-                            println!("Commands: STATUS, STOP [N]");
+                            SerialCommand::Stop => {
+                                println!(">> Stopping...");
+                                let _ = command_tx.try_send(cmd);
+                            }
+                            SerialCommand::StopSlot(slot) => {
+                                println!(">> Stopping slot {}...", slot + 1);
+                                let _ = command_tx.try_send(cmd);
+                            }
                         }
-                        line_buf.clear();
+                    } else {
+                        println!("Unknown command: {}", line_buf.as_str());
+                        println!("Commands: STATUS, STOP [N]");
                     }
-                } else if line_buf.push(b as char).is_err() {
-                    println!("Input too long, discarding");
                     line_buf.clear();
                 }
+            } else if line_buf.push(b as char).is_err() {
+                println!("Input too long, discarding");
+                line_buf.clear();
             }
-            _ => {}
         }
     }
 }
