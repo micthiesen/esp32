@@ -8,3 +8,4 @@
 # KiCad
 schematics/*/.history
 schematics/*/*-backups
+*.lck
