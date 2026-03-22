@@ -31,6 +31,7 @@ pub enum ChannelState {
     Error(ChannelError),
 }
 
+#[allow(dead_code)]
 impl ChannelState {
     pub fn is_active(&self) -> bool {
         matches!(self, ChannelState::Discharging { .. })

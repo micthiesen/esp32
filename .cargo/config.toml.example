@@ -11,7 +11,7 @@ build-std = ["core", "alloc"]
 [env]
 ESP_LOG = "INFO"
 
-# WiFi credentials
+# WiFi credentials (required for battery-tester binary)
 WIFI_SSID = "your-wifi-ssid"
 WIFI_PASSWORD = "your-wifi-password"
 
@@ -20,8 +20,7 @@ PUSHOVER_TOKEN = "your-app-token"
 PUSHOVER_USER = "your-user-key"
 
 # Notification endpoint URL
-# Use a local HTTP relay until TLS dep is fixed:
-#   NOTIFY_URL = "http://192.168.1.100:8080/pushover"
-# Once reqwless embedded-tls works, switch to direct HTTPS:
-#   NOTIFY_URL = "https://api.pushover.net/1/messages.json"
+# Use a local HTTP relay that forwards to Pushover over HTTPS:
 NOTIFY_URL = "http://192.168.1.100:8080/pushover"
+# Once reqwless TLS dep is fixed, switch to direct HTTPS:
+# NOTIFY_URL = "https://api.pushover.net/1/messages.json"

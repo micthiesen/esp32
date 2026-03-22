@@ -4,8 +4,18 @@ version = "0.1.0"
 edition = "2021"
 resolver = "2"
 
+[lib]
+name = "firmware"
+path = "src/lib.rs"
+
 [[bin]]
 name = "battery-tester"
+path = "src/bin/battery_tester/main.rs"
+harness = false
+
+[[bin]]
+name = "blink"
+path = "src/bin/blink/main.rs"
 harness = false
 
 [profile.release]
@@ -20,7 +30,7 @@ opt-level = "z"
 opt-level = 3
 
 [features]
-default = ["esp32c3"]
+default = ["esp32c3", "wifi"]
 esp32c3 = [
     "esp-hal/esp32c3",
     "esp-println/esp32c3",
@@ -28,8 +38,9 @@ esp32c3 = [
     "esp-rtos/esp32c3",
     "esp-hal-smartled/esp32c3",
     "esp-bootloader-esp-idf/esp32c3",
-    "esp-radio/esp32c3",
+    "esp-radio?/esp32c3",
 ]
+wifi = ["dep:esp-radio", "dep:embassy-net", "dep:reqwless", "dep:esp-alloc", "esp-rtos/esp-radio"]
 
 [dependencies]
 # Core logging
@@ -39,7 +50,7 @@ esp-backtrace = { version = "0.18", default-features = false, features = ["panic
 
 # ESP HAL + RTOS (Embassy integration)
 esp-hal = { version = "1.0", default-features = false, features = ["unstable", "rt"] }
-esp-rtos = { version = "0.2", default-features = false, features = ["embassy", "esp-radio", "esp-alloc"] }
+esp-rtos = { version = "0.2", default-features = false, features = ["embassy", "esp-alloc"] }
 esp-bootloader-esp-idf = { version = "0.4", default-features = false }
 
 # Embassy async runtime
@@ -54,10 +65,11 @@ ads1x1x = { version = "0.3", default-features = false }
 esp-hal-smartled = { version = "0.17", default-features = false }
 smart-leds = { version = "0.4", default-features = false }
 
-# WiFi and networking (for Pushover notifications)
-esp-radio = { version = "0.17", default-features = false, features = ["wifi"] }
-embassy-net = { version = "0.9", default-features = false, features = ["tcp", "udp", "dns", "dhcpv4"] }
-reqwless = { version = "0.14", default-features = false, features = ["log"] }
+# WiFi and networking (behind "wifi" feature)
+esp-radio = { version = "0.17", default-features = false, features = ["wifi"], optional = true }
+embassy-net = { version = "0.9", default-features = false, features = ["tcp", "udp", "dns", "dhcpv4"], optional = true }
+reqwless = { version = "0.14", default-features = false, features = ["log"], optional = true }
+esp-alloc = { version = "0.9", default-features = false, optional = true }
 
 # no_std utilities
 nb = "1.1"
@@ -67,7 +79,3 @@ static_cell = "2"
 portable-atomic = { version = "1.6", default-features = false }
 embedded-hal = { version = "1.0", default-features = false }
 embedded-hal-bus = { version = "0.3", default-features = false }
-
-# Memory allocator (needed for WiFi)
-esp-alloc = { version = "0.9", default-features = false }
-

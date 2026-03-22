@@ -14,7 +14,6 @@ pub enum SerialCommand {
     Stop,
 }
 
-/// Parse a trimmed, case-insensitive command string.
 fn parse_command(s: &str) -> Option<SerialCommand> {
     let trimmed = s.trim();
     if trimmed.eq_ignore_ascii_case("START") {
@@ -28,7 +27,6 @@ fn parse_command(s: &str) -> Option<SerialCommand> {
     }
 }
 
-/// Print a status table for all channels.
 fn print_status(states: &[ChannelState; NUM_CHANNELS]) {
     println!("┌──────┬──────┬──────────────────────────────────┐");
     println!("│ Slot │ Type │ State                            │");
@@ -123,7 +121,6 @@ pub async fn serial_task(
     let mut byte_buf = [0u8; 1];
 
     loop {
-        // Poll UART for incoming bytes
         match uart.read(&mut byte_buf) {
             Ok(n) if n > 0 => {
                 let b = byte_buf[0];
@@ -154,17 +151,14 @@ pub async fn serial_task(
                         line_buf.clear();
                     }
                 } else if line_buf.push(b as char).is_err() {
-                    // Buffer full, discard
                     println!("Input too long, discarding");
                     line_buf.clear();
                 }
             }
             Ok(_) => {
-                // No data available (0 bytes read), yield and retry
                 Timer::after(Duration::from_millis(50)).await;
             }
             Err(_) => {
-                // Read error, yield and retry
                 Timer::after(Duration::from_millis(50)).await;
             }
         }

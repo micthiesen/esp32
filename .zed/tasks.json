@@ -1,6 +1,38 @@
 [
 	{
-		"label": "Build (Debug)",
+		"label": "Battery Tester: Flash & Monitor",
+		"command": "cargo run --bin battery-tester",
+		"cwd": "$ZED_WORKTREE_ROOT",
+		"reveal": "always",
+		"hide": "never",
+		"tags": ["flash", "monitor", "rust", "esp32"]
+	},
+	{
+		"label": "Battery Tester: Build",
+		"command": "cargo build --bin battery-tester",
+		"cwd": "$ZED_WORKTREE_ROOT",
+		"reveal": "always",
+		"hide": "on_success",
+		"tags": ["build", "rust", "esp32"]
+	},
+	{
+		"label": "Battery Tester: Flash Release",
+		"command": "cargo run --bin battery-tester --release",
+		"cwd": "$ZED_WORKTREE_ROOT",
+		"reveal": "always",
+		"hide": "never",
+		"tags": ["flash", "monitor", "release", "rust", "esp32"]
+	},
+	{
+		"label": "Blink: Flash & Monitor",
+		"command": "cargo run --bin blink --no-default-features --features esp32c3",
+		"cwd": "$ZED_WORKTREE_ROOT",
+		"reveal": "always",
+		"hide": "never",
+		"tags": ["flash", "monitor", "rust", "esp32"]
+	},
+	{
+		"label": "Build All",
 		"command": "cargo build",
 		"cwd": "$ZED_WORKTREE_ROOT",
 		"reveal": "always",
@@ -8,7 +40,7 @@
 		"tags": ["build", "rust", "esp32"]
 	},
 	{
-		"label": "Build (Release)",
+		"label": "Build Release",
 		"command": "cargo build --release",
 		"cwd": "$ZED_WORKTREE_ROOT",
 		"reveal": "always",
@@ -24,36 +56,12 @@
 		"tags": ["build", "rust", "esp32"]
 	},
 	{
-		"label": "Flash & Monitor",
-		"command": "cargo run",
-		"cwd": "$ZED_WORKTREE_ROOT",
-		"reveal": "always",
-		"hide": "never",
-		"tags": ["flash", "monitor", "rust", "esp32"]
-	},
-	{
-		"label": "Flash Only",
-		"command": "espflash flash target/riscv32imc-unknown-none-elf/release/battery-tester",
-		"cwd": "$ZED_WORKTREE_ROOT",
-		"reveal": "always",
-		"hide": "on_success",
-		"tags": ["flash", "rust", "esp32"]
-	},
-	{
 		"label": "Monitor Only",
 		"command": "espflash monitor",
 		"cwd": "$ZED_WORKTREE_ROOT",
 		"reveal": "always",
 		"hide": "never",
 		"tags": ["monitor", "rust", "esp32"]
-	},
-	{
-		"label": "List Ports",
-		"command": "espflash board-info",
-		"cwd": "$ZED_WORKTREE_ROOT",
-		"reveal": "always",
-		"hide": "on_success",
-		"tags": ["device", "esp32"]
 	},
 	{
 		"label": "Device Info",
@@ -94,22 +102,6 @@
 		"reveal": "always",
 		"hide": "on_success",
 		"tags": ["lint", "rust"]
-	},
-	{
-		"label": "Flash (Release)",
-		"command": "cargo run --release",
-		"cwd": "$ZED_WORKTREE_ROOT",
-		"reveal": "always",
-		"hide": "never",
-		"tags": ["flash", "monitor", "release", "rust", "esp32"]
-	},
-	{
-		"label": "Save Firmware Image",
-		"command": "espflash save-image --chip esp32c3 target/riscv32imc-unknown-none-elf/release/battery-tester battery-tester-firmware.bin",
-		"cwd": "$ZED_WORKTREE_ROOT",
-		"reveal": "always",
-		"hide": "on_success",
-		"tags": ["build", "esp32"]
 	},
 	{
 		"label": "Claude Code",

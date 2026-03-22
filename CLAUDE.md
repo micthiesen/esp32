@@ -4,52 +4,73 @@
 
 ## Project Overview
 
-8-channel NiMH battery capacity tester running on ESP32-C3 (RISC-V). Bare-metal Rust firmware using `esp-hal` 1.0 (no_std, no OS) with Embassy async runtime. Measures battery discharge capacity via ADS1115 ADCs over I2C, controls discharge loads via GPIO, and displays per-channel status on SK6812 RGB LEDs.
+Multi-binary bare-metal Rust firmware for ESP32-C3 (RISC-V). Uses `esp-hal` 1.0 (no_std, no OS) with Embassy async runtime via `esp-rtos`. Primary binary is an 8-channel NiMH battery capacity tester with WiFi push notifications.
 
 See `.specs/battery-capacity-tester.md` for the full hardware and firmware specification.
 
 ## Quick Reference
 
 ```bash
-cargo build                  # Debug build
-cargo build --release        # Release build (opt-level "s")
-cargo run                    # Build, flash, and monitor (via espflash)
-cargo run --release          # Release flash and monitor
-cargo fmt && cargo clippy    # Format and lint
-espflash monitor             # Monitor serial output (no rebuild)
-espflash board-info          # Check connected device
+# Battery tester (default, includes WiFi)
+cargo run --bin battery-tester             # Flash and monitor
+cargo build --bin battery-tester           # Build only
+cargo build --bin battery-tester --release # Release build
+
+# Blink (no WiFi, minimal)
+cargo run --bin blink --no-default-features --features esp32c3
+
+# General
+cargo fmt && cargo clippy                  # Format and lint
+espflash monitor                           # Monitor serial output (no rebuild)
+espflash board-info                        # Check connected device
 ```
 
 **After making changes, always run `cargo fmt && cargo build` to verify.**
+
+## Setup
+
+1. Copy config: `cp .cargo/config.toml.example .cargo/config.toml`
+2. Fill in WiFi credentials and Pushover API keys in `.cargo/config.toml`
+3. Build: `cargo build --bin battery-tester`
+
+Secrets are compiled in via `env!()` macros. The build fails with a clear error if any env var is missing.
 
 ## Architecture
 
 ```
 src/
-  main.rs              # Entry point, Embassy executor setup, task spawning
-  config.rs            # Compile-time configuration (pins, thresholds, timing)
-  channel.rs           # Battery channel state machine (idle/discharge/done/error)
-  adc.rs               # ADS1115 ADC reading task (I2C, voltage/current measurement)
-  led.rs               # SK6812 LED status display task (RMT peripheral)
-  serial.rs            # UART serial output task (periodic status reporting)
+  lib.rs                          # Shared library crate
+  adc.rs                          #   ADS1115 8-channel ADC driver (I2C, shared bus)
+  wifi.rs                         #   WiFi station init + DHCP (behind "wifi" feature)
+  bin/
+    battery_tester/               # Main application binary
+      main.rs                     #   Entry point, Embassy setup, discharge manager task
+      config.rs                   #   Thresholds, timing, Pushover config (env vars)
+      channel.rs                  #   Discharge state machine (Idle/Scanning/Ready/Discharging/Complete/Error)
+      led.rs                      #   SK6812 LED status task (color-coded per channel)
+      serial.rs                   #   UART command interface (START/STATUS/STOP)
+      notify.rs                   #   Pushover HTTP notification task (via reqwless)
+    blink/                        # Simple LED blink test binary
+      main.rs
 ```
 
 ## Key Patterns
 
-- **no_std + no_main**: All code is bare-metal. No standard library, no heap by default (though `esp-alloc` is available).
+- **Multi-binary with shared lib**: `src/lib.rs` exports reusable modules (`adc`, `wifi`). Each `src/bin/*/main.rs` is a standalone firmware image.
+- **Feature-gated WiFi**: The `wifi` feature (default on) pulls in `esp-radio`, `embassy-net`, `reqwless`, `esp-alloc`. Disable with `--no-default-features --features esp32c3` for lightweight binaries.
 - **Embassy async tasks**: Each module runs as an `#[embassy_executor::task]` for cooperative multitasking.
-- **Shared state via mutex**: Battery channel state is shared between tasks using `embassy_sync::mutex::Mutex`.
-- **ADS1115 over I2C**: External 16-bit ADCs for precise voltage and current measurement, accessed via the `ads1x1x` driver crate.
-- **SK6812 LEDs via RMT**: RGB status LEDs driven through the ESP32-C3 RMT peripheral using `esp-hal-smartled`.
-- **Feature flags for chip selection**: `esp32c3` (default) feature gates HAL/println/backtrace/embassy/smartled crate chip support.
-- **Static configuration**: `config.rs` holds compile-time constants (pin assignments, voltage thresholds, timing intervals).
+- **Shared state via mutex**: Battery channel state shared between tasks using `embassy_sync::mutex::Mutex<CriticalSectionRawMutex, _>`.
+- **Compile-time secrets**: WiFi creds and API keys via `env!()` macros, sourced from `.cargo/config.toml` (gitignored). Template in `.cargo/config.toml.example`.
+- **ADS1115 over shared I2C**: Two ADC modules on one bus via `embedded_hal_bus::i2c::CriticalSectionDevice`.
+- **SK6812 LEDs via RMT**: RGB status LEDs driven through ESP32-C3 RMT peripheral.
+- **HTTP notifications**: Pushover via `reqwless` HTTP client through a local nginx HTTPS relay.
 
 ## Build Toolchain
 
 - Target: `riscv32imc-unknown-none-elf`
-- Uses nightly Rust (`build-std = ["core", "alloc"]`)
+- Nightly Rust (`build-std = ["core", "alloc"]`)
 - Runner: `espflash flash --monitor` (configured in `.cargo/config.toml`)
-- esp-hal 1.0 provides its own linker script (no custom `link.x` needed)
+- Linker script: `linkall.x` from esp-hal (via rustflags in config)
 
 ## Code Style
 

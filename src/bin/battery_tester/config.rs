@@ -21,10 +21,6 @@ pub const AAA_WEAK_MAH: f32 = 400.0;
 // Number of channels
 pub const NUM_CHANNELS: usize = 8;
 
-// WiFi credentials (set via env vars in .cargo/config.toml)
-pub const WIFI_SSID: &str = env!("WIFI_SSID");
-pub const WIFI_PASSWORD: &str = env!("WIFI_PASSWORD");
-
 // Pushover notification (set via env vars in .cargo/config.toml)
 pub const PUSHOVER_TOKEN: &str = env!("PUSHOVER_TOKEN");
 pub const PUSHOVER_USER: &str = env!("PUSHOVER_USER");

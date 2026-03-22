@@ -1,22 +1,14 @@
 use embassy_net::dns::DnsSocket;
 use embassy_net::tcp::client::{TcpClient, TcpClientState};
-use embassy_net::{Runner, Stack, StackResources};
+use embassy_net::Stack;
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 use embassy_sync::channel::Receiver;
-use embassy_time::Duration;
-use esp_radio::wifi::{ClientConfig, ModeConfig, WifiController, WifiDevice};
 use heapless::String;
 use reqwless::client::HttpClient;
 use reqwless::request::{Method, RequestBuilder};
 use static_cell::StaticCell;
 
-use crate::config::{
-    BatteryResult, SlotType, NOTIFY_URL, PUSHOVER_TOKEN, PUSHOVER_USER, WIFI_PASSWORD, WIFI_SSID,
-};
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+use crate::config::{BatteryResult, SlotType, NOTIFY_URL, PUSHOVER_TOKEN, PUSHOVER_USER};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Notification {
@@ -29,86 +21,11 @@ pub struct Notification {
 
 pub type NotifyChannel = embassy_sync::channel::Channel<CriticalSectionRawMutex, Notification, 8>;
 
-// ---------------------------------------------------------------------------
-// WiFi initialization
-// ---------------------------------------------------------------------------
-
-pub async fn init_wifi(
-    spawner: &embassy_executor::Spawner,
-    wifi: esp_hal::peripherals::WIFI<'static>,
-) -> Stack<'static> {
-    // Initialize the radio subsystem (static lifetime needed for spawned tasks)
-    static CONTROLLER: StaticCell<esp_radio::Controller<'static>> = StaticCell::new();
-    let controller = CONTROLLER.init(esp_radio::init().unwrap());
-
-    // Create WiFi controller + interfaces
-    let (mut wifi_controller, interfaces) =
-        esp_radio::wifi::new(controller, wifi, esp_radio::wifi::Config::default()).unwrap();
-
-    // Configure station mode with SSID/password
-    let client_config = ModeConfig::Client(
-        ClientConfig::default()
-            .with_ssid(WIFI_SSID.try_into().unwrap())
-            .with_password(WIFI_PASSWORD.try_into().unwrap()),
-    );
-    wifi_controller.set_config(&client_config).unwrap();
-
-    // Start WiFi and connect
-    wifi_controller.start_async().await.unwrap();
-    log::info!("[wifi] started");
-    wifi_controller.connect_async().await.unwrap();
-    log::info!("[wifi] connected to {}", WIFI_SSID);
-
-    // Create embassy-net stack with DHCP
-    let net_config = embassy_net::Config::dhcpv4(Default::default());
-    let seed = esp_hal::rng::Rng::new().random() as u64;
-
-    static RESOURCES: StaticCell<StackResources<3>> = StaticCell::new();
-    let resources = RESOURCES.init(StackResources::new());
-
-    static RUNNER: StaticCell<Runner<'static, WifiDevice<'static>>> = StaticCell::new();
-
-    let (stack, runner) = embassy_net::new(interfaces.sta, net_config, resources, seed);
-    let runner = RUNNER.init(runner);
-
-    // Spawn background tasks
-    spawner.spawn(net_task(runner)).unwrap();
-    spawner.spawn(connection_task(wifi_controller)).unwrap();
-
-    // Wait for DHCP
-    log::info!("[wifi] waiting for IP...");
-    stack.wait_config_up().await;
-    log::info!("[wifi] got IP");
-
-    stack
-}
-
-#[embassy_executor::task]
-async fn net_task(runner: &'static mut Runner<'static, WifiDevice<'static>>) {
-    runner.run().await
-}
-
-#[embassy_executor::task]
-async fn connection_task(mut controller: WifiController<'static>) {
-    loop {
-        if !controller.is_connected().unwrap_or(false) {
-            log::info!("[wifi] reconnecting...");
-            let _ = controller.connect_async().await;
-        }
-        embassy_time::Timer::after(Duration::from_secs(5)).await;
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Notification task
-// ---------------------------------------------------------------------------
-
 #[embassy_executor::task]
 pub async fn notify_task(
     stack: Stack<'static>,
     rx: Receiver<'static, CriticalSectionRawMutex, Notification, 8>,
 ) {
-    // TCP client state for reqwless (1 concurrent connection, 4KB buffers)
     static TCP_STATE: StaticCell<TcpClientState<1, 4096, 4096>> = StaticCell::new();
     let tcp_state = TCP_STATE.init(TcpClientState::new());
     let tcp_client = TcpClient::new(stack, tcp_state);
@@ -121,10 +38,6 @@ pub async fn notify_task(
         }
     }
 }
-
-// ---------------------------------------------------------------------------
-// HTTPS POST via reqwless
-// ---------------------------------------------------------------------------
 
 #[derive(Debug)]
 pub enum NotifyError {
@@ -154,7 +67,7 @@ async fn send_notification<'a>(
 
     let mut rx_buf = [0u8; 1024];
     let headers = [("Content-Type", "application/x-www-form-urlencoded")];
-    let mut handle = client
+    let handle = client
         .request(Method::POST, NOTIFY_URL)
         .await
         .map_err(|_| NotifyError::Request)?;
@@ -173,10 +86,6 @@ async fn send_notification<'a>(
         Err(NotifyError::NonOkStatus)
     }
 }
-
-// ---------------------------------------------------------------------------
-// Message / body formatting
-// ---------------------------------------------------------------------------
 
 /// Build the URL-encoded POST body.
 /// Max body size ~512 bytes assuming token/user keys under 50 chars each.

@@ -1,7 +1,6 @@
 #![no_std]
 #![no_main]
 
-mod adc;
 mod channel;
 mod config;
 mod led;
@@ -18,29 +17,25 @@ use esp_hal::rmt::Rmt;
 use esp_hal::time::Rate;
 use esp_hal::timer::timg::TimerGroup;
 use esp_hal::uart::{Config as UartConfig, Uart};
+use firmware::adc::{BatteryAdc, SharedI2cBus};
 use static_cell::StaticCell;
 
-use crate::adc::SharedI2cBus;
 use crate::channel::{ChannelError, ChannelState, SharedState};
 use crate::config::NUM_CHANNELS;
 use crate::notify::{Notification, NotifyChannel};
 use crate::serial::SerialCommand;
 
-/// Concrete I2C type used throughout the project.
 type I2cBus = I2c<'static, esp_hal::Blocking>;
 
 #[esp_rtos::main]
 async fn main(spawner: embassy_executor::Spawner) {
-    // Initialize logging from ESP_LOG env var (default INFO)
     esp_println::logger::init_logger_from_env();
 
     // Initialize heap allocator (needed for WiFi firmware)
     esp_alloc::heap_allocator!(size: 72 * 1024);
 
-    // Initialize HAL and peripherals
     let peripherals = esp_hal::init(esp_hal::Config::default());
 
-    // Initialize Embassy RTOS (timer + software interrupt for task scheduling)
     let timg0 = TimerGroup::new(peripherals.TIMG0);
     let sw_int =
         esp_hal::interrupt::software::SoftwareInterruptControl::new(peripherals.SW_INTERRUPT);
@@ -48,15 +43,12 @@ async fn main(spawner: embassy_executor::Spawner) {
 
     log::info!("Battery capacity tester starting up");
 
-    // Initialize WiFi and get network stack
-    let stack = notify::init_wifi(&spawner, peripherals.WIFI).await;
+    // Initialize WiFi and notifications
+    let stack = firmware::wifi::init(&spawner, peripherals.WIFI).await;
 
-    // Initialize notification channel
     static NOTIFY_CHAN: StaticCell<NotifyChannel> = StaticCell::new();
-    let notify_chan: &'static NotifyChannel =
-        NOTIFY_CHAN.init(embassy_sync::channel::Channel::new());
+    let notify_chan: &'static NotifyChannel = NOTIFY_CHAN.init(Channel::new());
 
-    // Spawn notification task
     spawner
         .spawn(notify::notify_task(stack, notify_chan.receiver()))
         .unwrap();
@@ -67,7 +59,6 @@ async fn main(spawner: embassy_executor::Spawner) {
         .with_sda(peripherals.GPIO0)
         .with_scl(peripherals.GPIO1);
 
-    // Store I2C bus in a static mutex for sharing between ADS1115 instances
     static I2C_BUS: StaticCell<SharedI2cBus<I2cBus>> = StaticCell::new();
     let i2c_bus: &'static SharedI2cBus<I2cBus> =
         I2C_BUS.init(critical_section::Mutex::new(core::cell::RefCell::new(i2c)));
@@ -84,28 +75,23 @@ async fn main(spawner: embassy_executor::Spawner) {
         Output::new(peripherals.GPIO9, Level::Low, OutputConfig::default()),
     ];
 
-    // Initialize shared channel state
     static STATE: StaticCell<SharedState> = StaticCell::new();
     let state: &'static SharedState = STATE.init(embassy_sync::mutex::Mutex::new(
         [ChannelState::Idle; NUM_CHANNELS],
     ));
 
-    // Initialize command channel for serial -> discharge_manager communication
     static CMD_CHAN: StaticCell<Channel<CriticalSectionRawMutex, SerialCommand, 4>> =
         StaticCell::new();
     let cmd_chan: &'static Channel<CriticalSectionRawMutex, SerialCommand, 4> =
         CMD_CHAN.init(Channel::new());
 
-    // Initialize RMT peripheral for driving addressable LEDs
     let rmt = Rmt::new(peripherals.RMT, Rate::from_mhz(80)).unwrap();
 
-    // Initialize UART0 for serial command input.
     let uart = Uart::new(peripherals.UART0, UartConfig::default())
         .unwrap()
         .with_rx(peripherals.GPIO20)
         .with_tx(peripherals.GPIO21);
 
-    // Spawn tasks
     spawner
         .spawn(led::led_task(
             rmt.channel0,
@@ -129,7 +115,6 @@ async fn main(spawner: embassy_executor::Spawner) {
     log::info!("All tasks spawned. Send START to begin discharge test.");
 }
 
-/// Main discharge management task.
 #[embassy_executor::task]
 async fn discharge_manager(
     mut mosfets: [Output<'static>; 8],
@@ -138,7 +123,7 @@ async fn discharge_manager(
     cmd_rx: embassy_sync::channel::Receiver<'static, CriticalSectionRawMutex, SerialCommand, 4>,
     notify_tx: Sender<'static, CriticalSectionRawMutex, Notification, 8>,
 ) {
-    let mut battery_adc = adc::BatteryAdc::new(i2c_bus);
+    let mut battery_adc = BatteryAdc::new(i2c_bus);
 
     loop {
         // Wait for START command
@@ -151,7 +136,6 @@ async fn discharge_manager(
 
         log::info!("Starting battery scan...");
 
-        // Mark all channels as scanning
         {
             let mut channels = state.lock().await;
             for slot in 0..NUM_CHANNELS {
@@ -159,10 +143,8 @@ async fn discharge_manager(
             }
         }
 
-        // Brief pause so LED task can show scanning state
         Timer::after(Duration::from_millis(500)).await;
 
-        // Read OCV and classify each slot
         {
             let mut channels = state.lock().await;
             for slot in 0..NUM_CHANNELS {
@@ -179,7 +161,6 @@ async fn discharge_manager(
             }
         }
 
-        // Enable MOSFET discharge on slots that are Ready
         let mut active = [false; NUM_CHANNELS];
         let mut capacity_mah = [0.0f32; NUM_CHANNELS];
         let mut min_voltage = [5.0f32; NUM_CHANNELS];
@@ -200,13 +181,11 @@ async fn discharge_manager(
             }
         }
 
-        // Discharge loop: sample, accumulate, check cutoff
         let mut log_counter = 0u32;
         let mut last_sample_time = Instant::now();
         while active.iter().any(|&a| a) {
             Timer::after(Duration::from_millis(config::SAMPLE_INTERVAL_MS)).await;
 
-            // Check for STOP command (non-blocking)
             if let Ok(cmd) = cmd_rx.try_receive() {
                 if matches!(cmd, SerialCommand::Stop) {
                     log::info!("STOP received, aborting all channels");
@@ -246,14 +225,12 @@ async fn discharge_manager(
                         let current_a = voltage / config::DISCHARGE_RESISTOR_OHMS;
                         let current_ma = current_a * 1000.0;
 
-                        // Accumulate capacity: mAh = sum(I_a * dt_s) / 3.6
                         capacity_mah[slot] += (current_a * dt_s) / 3.6;
 
                         if voltage < min_voltage[slot] {
                             min_voltage[slot] = voltage;
                         }
 
-                        // Update shared state
                         {
                             let mut channels = state.lock().await;
                             channels[slot] = ChannelState::Discharging {
@@ -264,7 +241,6 @@ async fn discharge_manager(
                             };
                         }
 
-                        // Check voltage cutoff
                         if voltage < config::VOLTAGE_CUTOFF {
                             below_cutoff_count[slot] += 1;
                             if below_cutoff_count[slot] >= config::CUTOFF_CONSECUTIVE_READINGS {
@@ -291,7 +267,6 @@ async fn discharge_manager(
                                     elapsed_s
                                 );
 
-                                // Send push notification
                                 let _ = notify_tx.try_send(Notification {
                                     slot: (slot + 1) as u8,
                                     slot_type,
@@ -304,7 +279,6 @@ async fn discharge_manager(
                             below_cutoff_count[slot] = 0;
                         }
 
-                        // Periodic per-channel logging
                         if log_counter % config::LOG_INTERVAL_S == 0 {
                             log::info!(
                                 "Slot {}: {:.3}V {:.0}mA {:.0}mAh {}s",
@@ -340,7 +314,6 @@ async fn discharge_manager(
             }
         }
 
-        // Print summary
         log::info!("=== Discharge Complete ===");
         let channels = state.lock().await;
         for slot in 0..NUM_CHANNELS {
