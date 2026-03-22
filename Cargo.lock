@@ -840,6 +840,7 @@ dependencies = [
  "esp-metadata-generated",
  "esp-sync",
  "log",
+ "portable-atomic",
 ]
 
 [[package]]

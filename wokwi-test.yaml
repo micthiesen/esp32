@@ -1,5 +1,8 @@
 name: 'Battery Tester Continuous Mode'
 version: 1
+# Note: Wokwi sim uses generic ESP32-C3 devkit, not XIAO.
+# GPIO20 (slot 8 gate) and GPIO21 (LED) not available in sim.
+# LED strip and slot 8 are disconnected. Slots 1-7 work.
 steps:
   - wait-serial: 'discharge started'
   - wait-serial: 'COMPLETE'

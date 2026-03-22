@@ -19,7 +19,7 @@ use esp_hal::i2c::master::{Config as I2cConfig, I2c};
 use esp_hal::rmt::Rmt;
 use esp_hal::time::Rate;
 use esp_hal::timer::timg::TimerGroup;
-use esp_hal::uart::{Config as UartConfig, Uart};
+use esp_hal::usb_serial_jtag::UsbSerialJtag;
 use firmware::adc::{BatteryAdc, SharedI2cBus};
 use static_cell::StaticCell;
 
@@ -67,8 +67,8 @@ async fn main(spawner: embassy_executor::Spawner) {
     // Initialize I2C bus for ADS1115 communication
     let i2c = I2c::new(peripherals.I2C0, I2cConfig::default())
         .unwrap()
-        .with_sda(peripherals.GPIO0)
-        .with_scl(peripherals.GPIO1);
+        .with_sda(peripherals.GPIO6)
+        .with_scl(peripherals.GPIO7);
 
     static I2C_BUS: StaticCell<SharedI2cBus<I2cBus>> = StaticCell::new();
     let i2c_bus: &'static SharedI2cBus<I2cBus> =
@@ -80,10 +80,10 @@ async fn main(spawner: embassy_executor::Spawner) {
         Output::new(peripherals.GPIO3, Level::Low, OutputConfig::default()),
         Output::new(peripherals.GPIO4, Level::Low, OutputConfig::default()),
         Output::new(peripherals.GPIO5, Level::Low, OutputConfig::default()),
-        Output::new(peripherals.GPIO6, Level::Low, OutputConfig::default()),
-        Output::new(peripherals.GPIO7, Level::Low, OutputConfig::default()),
         Output::new(peripherals.GPIO8, Level::Low, OutputConfig::default()),
         Output::new(peripherals.GPIO9, Level::Low, OutputConfig::default()),
+        Output::new(peripherals.GPIO10, Level::Low, OutputConfig::default()),
+        Output::new(peripherals.GPIO20, Level::Low, OutputConfig::default()),
     ];
 
     static STATE: StaticCell<SharedState> = StaticCell::new();
@@ -98,20 +98,17 @@ async fn main(spawner: embassy_executor::Spawner) {
 
     let rmt = Rmt::new(peripherals.RMT, Rate::from_mhz(80)).unwrap();
 
-    let uart = Uart::new(peripherals.UART0, UartConfig::default())
-        .unwrap()
-        .with_rx(peripherals.GPIO20)
-        .with_tx(peripherals.GPIO21);
+    let usb_serial = UsbSerialJtag::new(peripherals.USB_DEVICE);
 
     spawner
         .spawn(led::led_task(
             rmt.channel0,
-            peripherals.GPIO10.degrade(),
+            peripherals.GPIO21.degrade(),
             state,
         ))
         .unwrap();
     spawner
-        .spawn(serial::serial_task(uart, state, cmd_chan.sender()))
+        .spawn(serial::serial_task(usb_serial, state, cmd_chan.sender()))
         .unwrap();
     spawner
         .spawn(channel_manager(

@@ -117,26 +117,18 @@ fn print_status(states: &[ChannelState; NUM_CHANNELS]) {
 
 #[embassy_executor::task]
 pub async fn serial_task(
-    mut uart: esp_hal::uart::Uart<'static, esp_hal::Blocking>,
+    mut usb_serial: esp_hal::usb_serial_jtag::UsbSerialJtag<'static, esp_hal::Blocking>,
     state: &'static SharedState,
     command_tx: Sender<'static, CriticalSectionRawMutex, SerialCommand, 4>,
 ) {
     let mut line_buf: String<64> = String::new();
-    let mut byte_buf = [0u8; 1];
 
     loop {
         // Yield to let other tasks run
         Timer::after(Duration::from_millis(10)).await;
 
-        // Only read when data is available (uart.read may block otherwise)
-        if !uart.read_ready() {
-            continue;
-        }
-
-        match uart.read(&mut byte_buf) {
-            Ok(n) if n > 0 => {
-                let b = byte_buf[0];
-
+        match usb_serial.read_byte() {
+            Ok(b) => {
                 if b == b'\n' || b == b'\r' {
                     if !line_buf.is_empty() {
                         if let Some(cmd) = parse_command(line_buf.as_str()) {

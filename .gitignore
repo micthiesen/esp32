@@ -9,5 +9,6 @@
 chips/*.wasm
 chips/wokwi-api.h
 
-# Generated PDF
-docs/*.pdf
+# KiCad
+schematics/*/.history
+schematics/*/*-backups

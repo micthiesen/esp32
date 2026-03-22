@@ -34,7 +34,7 @@ default = ["esp32c3", "wifi"]
 esp32c3 = [
     "esp-hal/esp32c3",
     "esp-println/esp32c3",
-    "esp-println/uart",
+    "esp-println/jtag-serial",
     "esp-backtrace/esp32c3",
     "esp-rtos/esp32c3",
     "esp-hal-smartled/esp32c3",
