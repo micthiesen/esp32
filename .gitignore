@@ -9,3 +9,5 @@
 schematics/*/.history
 schematics/*/*-backups
 *.lck
+schematics/*/*.rpt
+schematics/*/fp-info-cache
