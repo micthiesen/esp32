@@ -3,6 +3,7 @@
 
 use embassy_time::{Duration, Timer};
 use esp_backtrace as _;
+esp_bootloader_esp_idf::esp_app_desc!();
 use esp_hal::gpio::{Level, Output, OutputConfig};
 use esp_hal::timer::timg::TimerGroup;
 

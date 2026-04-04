@@ -18,6 +18,11 @@ name = "blink"
 path = "src/bin/blink/main.rs"
 harness = false
 
+[[bin]]
+name = "adc-test"
+path = "src/bin/adc_test/main.rs"
+harness = false
+
 [profile.release]
 opt-level = "s"
 
