@@ -16,13 +16,18 @@ cargo run --bin battery-tester             # Flash and monitor
 cargo build --bin battery-tester           # Build only
 cargo build --bin battery-tester --release # Release build
 
+# ADC test (reads all 8 channels, no WiFi)
+cargo run --bin adc-test --no-default-features --features esp32c3
+
 # Blink (no WiFi, minimal)
 cargo run --bin blink --no-default-features --features esp32c3
 
 # General
 cargo fmt && cargo clippy                  # Format and lint
-espflash monitor                           # Monitor serial output (no rebuild)
 espflash board-info                        # Check connected device
+
+# Serial monitor (non-interactive, works in Claude Code)
+python3 scripts/serial_monitor.py [seconds] [port]  # default: 10s, /dev/ttyACM1
 ```
 
 **After making changes, always run `cargo fmt && cargo build` to verify.**
@@ -52,6 +57,25 @@ src/
       notify.rs                   #   Pushover HTTP notification task (via reqwless)
     blink/                        # Simple LED blink test binary
       main.rs
+    adc_test/                     # Raw ADC voltage reader (hardware debug)
+      main.rs
+scripts/
+  serial_monitor.py               # Non-interactive serial monitor (pyserial)
+```
+
+## Serial Monitoring
+
+`espflash monitor` requires an interactive terminal, so use the Python script instead:
+
+```bash
+python3 scripts/serial_monitor.py        # 10 seconds, /dev/ttyACM1
+python3 scripts/serial_monitor.py 30     # 30 seconds
+python3 scripts/serial_monitor.py 10 /dev/ttyACM0  # different port
+```
+
+The XIAO ESP32-C3 appears as an Espressif USB JTAG device. To find the right port:
+```bash
+for dev in /dev/ttyACM*; do udevadm info --query=property --name="$dev" | grep -q Espressif && echo "$dev"; done
 ```
 
 ## Key Patterns

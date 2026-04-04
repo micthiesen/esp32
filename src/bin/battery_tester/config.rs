@@ -2,7 +2,7 @@
 pub const DISCHARGE_RESISTOR_OHMS: f32 = 2.2;
 
 // Voltage thresholds (volts)
-pub const VOLTAGE_NO_BATTERY: f32 = 0.1;
+pub const VOLTAGE_NO_BATTERY: f32 = 0.6;
 pub const VOLTAGE_ALKALINE: f32 = 1.5;
 pub const VOLTAGE_NOT_CHARGED: f32 = 1.1;
 pub const VOLTAGE_CUTOFF: f32 = 1.0;
