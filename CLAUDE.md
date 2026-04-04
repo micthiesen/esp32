@@ -59,18 +59,33 @@ src/
       main.rs
     adc_test/                     # Raw ADC voltage reader (hardware debug)
       main.rs
+    led_test/                     # LED color order test (RGBW SK6812W)
+      main.rs
 scripts/
-  serial_monitor.py               # Non-interactive serial monitor (pyserial)
+  serial_monitor.py               # Serial monitor daemon (logs to /tmp/esp32-serial.log)
+  monitor.sh                      # Watch live serial output (tail -f the log)
+  flash.sh                        # Flash firmware, auto-pauses/resumes monitor
 ```
 
-## Serial Monitoring
+## Serial Monitoring and Flashing
 
-`espflash monitor` requires an interactive terminal, so use the Python script instead:
+The serial monitor runs as a background daemon, logging to `/tmp/esp32-serial.log`. It auto-reconnects on disconnect and can be paused for flashing.
 
 ```bash
-python3 scripts/serial_monitor.py        # 10 seconds, /dev/ttyACM1
-python3 scripts/serial_monitor.py 30     # 30 seconds
-python3 scripts/serial_monitor.py 10 /dev/ttyACM0  # different port
+# Start the daemon (once per session)
+python3 scripts/serial_monitor.py &
+
+# Watch live output (user runs in a terminal)
+./scripts/monitor.sh
+
+# Read recent output (Claude Code)
+tail -20 /tmp/esp32-serial.log
+
+# Flash firmware (auto-pauses monitor, resumes after)
+bash scripts/flash.sh target/riscv32imc-unknown-none-elf/debug/battery-tester
+
+# Stop the daemon
+kill $(cat /tmp/esp32-serial.pid)
 ```
 
 The XIAO ESP32-C3 appears as an Espressif USB JTAG device. To find the right port:

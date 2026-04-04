@@ -33,8 +33,10 @@ pub async fn init(
     // Start WiFi and connect
     wifi_controller.start_async().await.unwrap();
     log::info!("[wifi] started");
-    wifi_controller.connect_async().await.unwrap();
-    log::info!("[wifi] connected to {}", ssid);
+    match wifi_controller.connect_async().await {
+        Ok(_) => log::info!("[wifi] connected to {}", ssid),
+        Err(e) => log::warn!("[wifi] initial connection failed: {:?} (will retry in background)", e),
+    }
 
     // Create embassy-net stack with DHCP
     let net_config = embassy_net::Config::dhcpv4(Default::default());
@@ -51,11 +53,16 @@ pub async fn init(
     spawner.spawn(net_task(runner)).unwrap();
     spawner.spawn(connection_task(wifi_controller)).unwrap();
 
+    spawner.spawn(wait_for_ip(stack)).unwrap();
+
+    stack
+}
+
+#[embassy_executor::task]
+async fn wait_for_ip(stack: Stack<'static>) {
     log::info!("[wifi] waiting for IP...");
     stack.wait_config_up().await;
     log::info!("[wifi] got IP");
-
-    stack
 }
 
 #[embassy_executor::task]

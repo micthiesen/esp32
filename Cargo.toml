@@ -23,6 +23,11 @@ name = "adc-test"
 path = "src/bin/adc_test/main.rs"
 harness = false
 
+[[bin]]
+name = "led-test"
+path = "src/bin/led_test/main.rs"
+harness = false
+
 [profile.release]
 opt-level = "s"
 
@@ -70,6 +75,7 @@ ads1x1x = { version = "0.3", default-features = false }
 # LED driver (SK6812/WS2812B via RMT)
 esp-hal-smartled = { version = "0.17", default-features = false }
 smart-leds = { version = "0.4", default-features = false }
+rgb = { version = "0.8", default-features = false }
 
 # WiFi and networking
 esp-radio = { version = "0.17", default-features = false, features = ["wifi"] }
