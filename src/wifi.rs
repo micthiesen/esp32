@@ -30,16 +30,9 @@ pub async fn init(
     );
     wifi_controller.set_config(&client_config).unwrap();
 
-    // Start WiFi and connect
+    // Start WiFi radio (connection happens in background task)
     wifi_controller.start_async().await.unwrap();
     log::info!("[wifi] started");
-    match wifi_controller.connect_async().await {
-        Ok(_) => log::info!("[wifi] connected to {}", ssid),
-        Err(e) => log::warn!(
-            "[wifi] initial connection failed: {:?} (will retry in background)",
-            e
-        ),
-    }
 
     // Create embassy-net stack with DHCP
     let net_config = embassy_net::Config::dhcpv4(Default::default());
@@ -56,16 +49,7 @@ pub async fn init(
     spawner.spawn(net_task(runner)).unwrap();
     spawner.spawn(connection_task(wifi_controller)).unwrap();
 
-    spawner.spawn(wait_for_ip(stack)).unwrap();
-
     stack
-}
-
-#[embassy_executor::task]
-async fn wait_for_ip(stack: Stack<'static>) {
-    log::info!("[wifi] waiting for IP...");
-    stack.wait_config_up().await;
-    log::info!("[wifi] got IP");
 }
 
 #[embassy_executor::task]
@@ -75,11 +59,19 @@ async fn net_task(runner: &'static mut Runner<'static, WifiDevice<'static>>) {
 
 #[embassy_executor::task]
 async fn connection_task(mut controller: WifiController<'static>) {
+    // Initial connection
+    log::info!("[wifi] connecting...");
+    match controller.connect_async().await {
+        Ok(_) => log::info!("[wifi] connected"),
+        Err(e) => log::warn!("[wifi] initial connection failed: {:?}", e),
+    }
+
+    // Reconnect loop
     loop {
+        embassy_time::Timer::after(Duration::from_secs(5)).await;
         if !controller.is_connected().unwrap_or(false) {
             log::info!("[wifi] reconnecting...");
             let _ = controller.connect_async().await;
         }
-        embassy_time::Timer::after(Duration::from_secs(5)).await;
     }
 }

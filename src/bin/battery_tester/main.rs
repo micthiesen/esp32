@@ -41,20 +41,6 @@ async fn main(spawner: embassy_executor::Spawner) {
 
     log::info!("Battery capacity tester starting up");
 
-    // Initialize WiFi and notifications
-    esp_alloc::heap_allocator!(size: 72 * 1024);
-
-    let stack = firmware::wifi::init(&spawner, peripherals.WIFI).await;
-
-    static NOTIFY_CHAN: StaticCell<NotifyChannel> = StaticCell::new();
-    let notify_chan: &'static NotifyChannel = NOTIFY_CHAN.init(Channel::new());
-
-    spawner
-        .spawn(notify::notify_task(stack, notify_chan.receiver()))
-        .unwrap();
-
-    let notify_tx = Some(notify_chan.sender());
-
     // Initialize I2C bus for ADS1115 communication
     let i2c = I2c::new(peripherals.I2C0, I2cConfig::default())
         .unwrap()
@@ -91,6 +77,7 @@ async fn main(spawner: embassy_executor::Spawner) {
 
     let usb_serial = UsbSerialJtag::new(peripherals.USB_DEVICE);
 
+    // Spawn core tasks first (LEDs, serial, channel manager) so they start immediately
     spawner
         .spawn(led::led_task(
             rmt.channel0,
@@ -101,6 +88,11 @@ async fn main(spawner: embassy_executor::Spawner) {
     spawner
         .spawn(serial::serial_task(usb_serial, state, cmd_chan.sender()))
         .unwrap();
+
+    static NOTIFY_CHAN: StaticCell<NotifyChannel> = StaticCell::new();
+    let notify_chan: &'static NotifyChannel = NOTIFY_CHAN.init(Channel::new());
+    let notify_tx = Some(notify_chan.sender());
+
     spawner
         .spawn(channel_manager(
             mosfet_pins,
@@ -112,6 +104,15 @@ async fn main(spawner: embassy_executor::Spawner) {
         .unwrap();
 
     log::info!("Battery capacity tester ready");
+
+    // Initialize WiFi and notifications in background (never blocks core tasks)
+    esp_alloc::heap_allocator!(size: 72 * 1024);
+
+    let stack = firmware::wifi::init(&spawner, peripherals.WIFI).await;
+
+    spawner
+        .spawn(notify::notify_task(stack, notify_chan.receiver()))
+        .unwrap();
 }
 
 #[embassy_executor::task]

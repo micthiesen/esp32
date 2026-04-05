@@ -16,6 +16,10 @@ pub async fn notify_task(
     stack: Stack<'static>,
     rx: Receiver<'static, CriticalSectionRawMutex, Notification, 8>,
 ) {
+    // Wait for WiFi to get an IP before attempting HTTP requests
+    stack.wait_config_up().await;
+    log::info!("[notify] network ready");
+
     static TCP_STATE: StaticCell<TcpClientState<1, 4096, 4096>> = StaticCell::new();
     let tcp_state = TCP_STATE.init(TcpClientState::new());
     let tcp_client = TcpClient::new(stack, tcp_state);
