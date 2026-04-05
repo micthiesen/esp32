@@ -25,8 +25,11 @@ async fn main(_spawner: embassy_executor::Spawner) {
 
     let rmt = Rmt::new(peripherals.RMT, Rate::from_mhz(80)).unwrap();
     let mut buf = esp_hal_smartled::smart_led_buffer!(4; RGBW);
-    let mut smartled: SmartLedsAdapter<'_, { esp_hal_smartled::buffer_size_rgbw(4) }, rgb::Rgba<u8>> =
-        SmartLedsAdapter::new_with_color(rmt.channel0, peripherals.GPIO21.degrade(), &mut buf);
+    let mut smartled: SmartLedsAdapter<
+        '_,
+        { esp_hal_smartled::buffer_size_rgbw(4) },
+        rgb::Rgba<u8>,
+    > = SmartLedsAdapter::new_with_color(rmt.channel0, peripherals.GPIO21.degrade(), &mut buf);
 
     log::info!("LED RGBW test: LED1=R, LED2=G, LED3=B, LED4=W");
     log::info!("Tell me what colors you see");
@@ -34,10 +37,25 @@ async fn main(_spawner: embassy_executor::Spawner) {
     let level = 25u8;
 
     let colors = [
-        RGB8 { r: level, g: 0, b: 0 }.with_alpha(0),      // LED 1: RED
-        RGB8 { r: 0, g: level, b: 0 }.with_alpha(0),       // LED 2: GREEN
-        RGB8 { r: 0, g: 0, b: level }.with_alpha(0),       // LED 3: BLUE
-        RGB8 { r: 0, g: 0, b: 0 }.with_alpha(level),       // LED 4: WHITE
+        RGB8 {
+            r: level,
+            g: 0,
+            b: 0,
+        }
+        .with_alpha(0), // LED 1: RED
+        RGB8 {
+            r: 0,
+            g: level,
+            b: 0,
+        }
+        .with_alpha(0), // LED 2: GREEN
+        RGB8 {
+            r: 0,
+            g: 0,
+            b: level,
+        }
+        .with_alpha(0), // LED 3: BLUE
+        RGB8 { r: 0, g: 0, b: 0 }.with_alpha(level), // LED 4: WHITE
     ];
 
     loop {

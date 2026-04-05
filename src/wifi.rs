@@ -35,7 +35,10 @@ pub async fn init(
     log::info!("[wifi] started");
     match wifi_controller.connect_async().await {
         Ok(_) => log::info!("[wifi] connected to {}", ssid),
-        Err(e) => log::warn!("[wifi] initial connection failed: {:?} (will retry in background)", e),
+        Err(e) => log::warn!(
+            "[wifi] initial connection failed: {:?} (will retry in background)",
+            e
+        ),
     }
 
     // Create embassy-net stack with DHCP

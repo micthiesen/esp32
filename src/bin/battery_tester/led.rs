@@ -6,9 +6,14 @@ use smart_leds::SmartLedsWrite;
 use crate::channel::{ChannelError, ChannelState, SharedState};
 use crate::config::{BatteryResult, SlotType, NUM_CHANNELS};
 
-const BRIGHTNESS: f32 = 0.1;
+const BRIGHTNESS: f32 = 0.05;
 const UPDATE_PERIOD_MS: u64 = 100;
-const OFF: Rgba<u8> = Rgba { r: 0, g: 0, b: 0, a: 0 };
+const OFF: Rgba<u8> = Rgba {
+    r: 0,
+    g: 0,
+    b: 0,
+    a: 0,
+};
 
 /// Create an RGBW color with correct GRB channel order for SK6812W.
 /// Inputs are logical R, G, B values; output swaps R/G for the hardware.
@@ -54,19 +59,13 @@ fn color_for_state(state: &ChannelState, frame: u32) -> Rgba<u8> {
     }
 }
 
-fn color_for_complete(slot: usize, capacity_mah: f32, frame: u32) -> Rgba<u8> {
+fn color_for_complete(slot: usize, capacity_mah: f32, _frame: u32) -> Rgba<u8> {
     let slot_type = SlotType::from_slot(slot);
     let result = BatteryResult::classify(slot_type, capacity_mah);
 
     match result {
         BatteryResult::Good => dim(0, 255, 0),
-        BatteryResult::Weak => {
-            if (frame / 5).is_multiple_of(2) {
-                dim(0, 255, 0)
-            } else {
-                OFF
-            }
-        }
+        BatteryResult::Weak => dim(255, 80, 0),
         BatteryResult::Dead => dim(255, 0, 0),
     }
 }
@@ -101,7 +100,9 @@ pub async fn led_task(
             };
         }
 
-        let _ = smartled.write(colors.iter().copied());
+        critical_section::with(|_| {
+            let _ = smartled.write(colors.iter().copied());
+        });
 
         frame = frame.wrapping_add(1);
         Timer::after(Duration::from_millis(UPDATE_PERIOD_MS)).await;
