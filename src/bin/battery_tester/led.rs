@@ -18,25 +18,36 @@ const OFF: Rgba<u8> = Rgba {
 /// Create an RGBW color with correct GRB channel order for SK6812W.
 /// Inputs are logical R, G, B values; output swaps R/G for the hardware.
 fn dim(r: u8, g: u8, b: u8) -> Rgba<u8> {
+    dim_scaled(r, g, b, 1.0)
+}
+
+fn dim_scaled(r: u8, g: u8, b: u8, scale: f32) -> Rgba<u8> {
+    let s = BRIGHTNESS * scale;
     Rgba {
-        r: (g as f32 * BRIGHTNESS) as u8,
-        g: (r as f32 * BRIGHTNESS) as u8,
-        b: (b as f32 * BRIGHTNESS) as u8,
+        r: (g as f32 * s) as u8,
+        g: (r as f32 * s) as u8,
+        b: (b as f32 * s) as u8,
         a: 0,
     }
+}
+
+/// Smooth ease-in-out breathing curve. Returns 0.0..=1.0.
+fn breathe(frame: u32, cycle_frames: u32) -> f32 {
+    let half = cycle_frames / 2;
+    let pos = frame % cycle_frames;
+    let t = if pos < half {
+        pos as f32 / half as f32
+    } else {
+        (cycle_frames - pos) as f32 / half as f32
+    };
+    t * t * (3.0 - 2.0 * t) // smoothstep
 }
 
 fn color_for_state(state: &ChannelState, frame: u32) -> Rgba<u8> {
     match state {
         ChannelState::Idle => OFF,
         ChannelState::Scanning => dim(255, 80, 0),
-        ChannelState::Discharging { .. } => {
-            if (frame / 5).is_multiple_of(2) {
-                dim(0, 0, 255)
-            } else {
-                OFF
-            }
-        }
+        ChannelState::Discharging { .. } => dim_scaled(0, 0, 255, breathe(frame, 40)),
         ChannelState::Complete { .. } => unreachable!(),
         ChannelState::Error(err) => match err {
             ChannelError::WrongChemistry => {
